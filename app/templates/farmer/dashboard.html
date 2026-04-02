@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Farmer Dashboard - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Welcome Section -->
+        <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold">Welcome back, {{ current_user.username }}! 🌾</h1>
+                    <p class="mt-2 opacity-90">Farm: {{ current_user.farm_name or 'Your Farm' }}</p>
+                </div>
+                <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="currentDate" class="ml-2"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Products Listed</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ products_count or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-box text-4xl text-green-500 opacity-50"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Orders Received</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ orders_count or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-shopping-cart text-4xl text-blue-500 opacity-50"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Crop Recommendations</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ rec_count or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-leaf text-4xl text-yellow-500 opacity-50"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Revenue Generated</p>
+                        <h3 class="text-2xl font-bold text-gray-800">₹{{ revenue or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-rupee-sign text-4xl text-purple-500 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <a href="{{ url_for('farmer.crop_recommendation') }}" class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition">
+                        <i class="fas fa-microchip text-2xl text-green-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">AI Crop Recommendation</h3>
+                        <p class="text-sm text-gray-500">Get smart crop suggestions</p>
+                    </div>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('farmer.mandi_prices') }}" class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition">
+                        <i class="fas fa-chart-line text-2xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Mandi Prices</h3>
+                        <p class="text-sm text-gray-500">Check live market rates</p>
+                    </div>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('marketplace.products') }}" class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition">
+                        <i class="fas fa-store text-2xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Marketplace</h3>
+                        <p class="text-sm text-gray-500">Sell your produce</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('farmer.manage_products') }}" class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition">
+                        <i class="fas fa-basket-shopping text-2xl text-orange-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Manage Products</h3>
+                        <p class="text-sm text-gray-500">Add stock, price, images, and details</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('farmer.view_orders') }}" class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition group">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition">
+                        <i class="fas fa-truck-fast text-2xl text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">Track Orders</h3>
+                        <p class="text-sm text-gray-500">Monitor customer orders for your produce</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Your Listed Products</h3>
+                    <a href="{{ url_for('farmer.manage_products') }}" class="text-sm text-green-600 hover:underline">Manage all</a>
+                </div>
+                <div class="space-y-4">
+                    {% for product in products %}
+                    <div class="flex items-center justify-between gap-4 border rounded-xl p-3">
+                        <div class="flex items-center gap-4">
+                            <img src="{{ product.image_url or 'https://via.placeholder.com/96x96?text=Crop' }}" alt="{{ product.name }}" class="w-16 h-16 rounded-lg object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800">{{ product.name }}</p>
+                                <p class="text-sm text-gray-500">{{ product.category|capitalize }} | {{ product.quantity }} {{ product.unit }}</p>
+                                <p class="text-sm text-green-700 font-semibold">₹{{ product.price }}/{{ product.unit }}</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs {% if product.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ 'Available' if product.is_available else 'Hidden' }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-6">No produce listed yet. Add your first product to start selling.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Latest Orders</h3>
+                    <a href="{{ url_for('farmer.view_orders') }}" class="text-sm text-green-600 hover:underline">View all</a>
+                </div>
+                <div class="space-y-4">
+                    {% for order, item, product in orders %}
+                    <div class="border rounded-xl p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="font-semibold text-gray-800">{{ product.name }}</p>
+                                <p class="text-sm text-gray-500">{{ order.order_number }} | {{ order.buyer.username }}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700">{{ order.status|capitalize }}</span>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            Qty: {{ item.quantity }} | Total: ₹{{ '%.2f'|format(item.price * item.quantity) }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-6">No customer orders yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Recommendations & Chatbot -->
+        <div class="grid lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Recent Crop Recommendations</h3>
+                <div class="space-y-3">
+                    {% for rec in recent_recommendations %}
+                    <div class="border-b pb-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-green-600">{{ rec.recommended_crop }}</span>
+                            <span class="text-sm text-gray-500">{{ rec.created_at.strftime('%d %b, %Y') }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            Confidence: {{ "%.1f"|format(rec.confidence_score * 100) }}%
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-4">No recommendations yet. Try the AI Crop Advisor!</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- AI Chatbot -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">🤖 Agri Expert Chatbot</h3>
+                <div id="chatMessages" class="h-80 overflow-y-auto mb-4 space-y-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-start space-x-2">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1 bg-white rounded-lg p-3 shadow-sm">
+                            <p class="text-sm">Hello! I'm your agricultural assistant. Ask me about crops, fertilizers, weather, or farming practices!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="chatInput" placeholder="Type your question..." 
+                           class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button onclick="sendMessage()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update date
+document.getElementById('currentDate').innerHTML = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+
+// Chat functionality
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    // Add user message
+    const chatDiv = document.getElementById('chatMessages');
+    const userMsgDiv = document.createElement('div');
+    userMsgDiv.className = 'flex items-start space-x-2 justify-end';
+    userMsgDiv.innerHTML = `
+        <div class="flex-1 bg-green-100 rounded-lg p-3 shadow-sm">
+            <p class="text-sm">${message}</p>
+        </div>
+        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-user text-green-600 text-sm"></i>
+        </div>
+    `;
+    chatDiv.appendChild(userMsgDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+    
+    input.value = '';
+    
+    // Add loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'flex items-start space-x-2';
+    loadingDiv.id = 'loadingMsg';
+    loadingDiv.innerHTML = `
+        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-robot text-green-600 text-sm"></i>
+        </div>
+        <div class="flex-1 bg-white rounded-lg p-3 shadow-sm">
+            <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+            </div>
+        </div>
+    `;
+    chatDiv.appendChild(loadingDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+    
+    try {
+        const response = await fetch('/farmer/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: message})
+        });
+        const data = await response.json();
+        
+        // Remove loading indicator
+        document.getElementById('loadingMsg').remove();
+        
+        // Add bot response
+        const botMsgDiv = document.createElement('div');
+        botMsgDiv.className = 'flex items-start space-x-2';
+        botMsgDiv.innerHTML = `
+            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-green-600 text-sm"></i>
+            </div>
+            <div class="flex-1 bg-white rounded-lg p-3 shadow-sm">
+                <p class="text-sm">${data.response}</p>
+            </div>
+        `;
+        chatDiv.appendChild(botMsgDiv);
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    } catch (error) {
+        document.getElementById('loadingMsg').remove();
+        alert('Error getting response. Please try again.');
+    }
+}
+
+// Send message on Enter key
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+});
+</script>
+{% endblock %}

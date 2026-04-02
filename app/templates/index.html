@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Empowering Indian Farmers{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative overflow-hidden">
+    <div class="container mx-auto px-4 py-20 relative z-10">
+        <div class="text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-gray-800 mb-6 animate-fade-in">
+                Empowering Indian Agriculture
+                <span class="text-green-600">with Technology</span>
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                AI-powered crop recommendations, direct marketplace, government schemes, 
+                and real-time mandi prices - all in one platform
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="{{ url_for('auth.auth_home') }}" 
+                   class="bg-green-600 text-white px-8 py-3 rounded-full hover:bg-green-700 transition transform hover:scale-105 inline-flex items-center">
+                    <i class="fas fa-rocket mr-2"></i> Get Started
+                </a>
+                <a href="#features" 
+                   class="border-2 border-green-600 text-green-600 px-8 py-3 rounded-full hover:bg-green-50 transition transform hover:scale-105 inline-flex items-center">
+                    <i class="fas fa-play mr-2"></i> Watch Demo
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 bg-white/50 backdrop-blur-sm">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-8 text-center">
+            <div class="stat-card">
+                <div class="text-4xl text-green-600 mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-800" id="farmersCount">10,000+</div>
+                <div class="text-gray-600">Registered Farmers</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-4xl text-blue-600 mb-3">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-800" id="ordersCount">50,000+</div>
+                <div class="text-gray-600">Orders Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-4xl text-yellow-600 mb-3">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-800" id="cropsCount">25+</div>
+                <div class="text-gray-600">Crops Supported</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-4xl text-purple-600 mb-3">
+                    <i class="fas fa-language"></i>
+                </div>
+                <div class="text-3xl font-bold text-gray-800">5</div>
+                <div class="text-gray-600">Languages Supported</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-20">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                Powerful Features for Indian Farmers
+            </h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Everything you need to modernize your farming business
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- AI Crop Recommendation -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-microchip text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">AI Crop Recommendations</h3>
+                <p class="text-gray-600">
+                    Get smart crop suggestions based on your soil parameters, weather conditions, 
+                    and historical data. Increase yield by up to 30%.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-green-600 font-semibold">✓ 99% Accuracy</span>
+                </div>
+            </div>
+            
+            <!-- Mandi Prices -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-chart-line text-2xl text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Live Mandi Prices</h3>
+                <p class="text-gray-600">
+                    Real-time wholesale market prices across India. Make informed selling 
+                    decisions and get the best price for your produce.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-blue-600 font-semibold">✓ 500+ Markets</span>
+                </div>
+            </div>
+            
+            <!-- Government Schemes -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-file-alt text-2xl text-orange-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Government Schemes</h3>
+                <p class="text-gray-600">
+                    Discover and apply for agricultural subsidies, scholarships, and insurance 
+                    schemes directly through official portals.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-orange-600 font-semibold">✓ 50+ Schemes</span>
+                </div>
+            </div>
+            
+            <!-- Direct Marketplace -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-store text-2xl text-purple-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Direct Marketplace</h3>
+                <p class="text-gray-600">
+                    Sell your produce directly to consumers and buyers. No middlemen, 
+                    better prices, and complete control over your sales.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-purple-600 font-semibold">✓ Zero Commission</span>
+                </div>
+            </div>
+            
+            <!-- AI Chatbot -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-robot text-2xl text-yellow-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">24/7 AI Assistant</h3>
+                <p class="text-gray-600">
+                    Get instant answers to your farming questions. From pest control to 
+                    fertilizer recommendations, our AI is here to help.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-yellow-600 font-semibold">✓ Instant Response</span>
+                </div>
+            </div>
+            
+            <!-- Multilingual Support -->
+            <div class="feature-card bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-language text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">5 Indian Languages</h3>
+                <p class="text-gray-600">
+                    Use the platform in your preferred language - Hindi, Tamil, Telugu, 
+                    Marathi, or English. Breaking language barriers.
+                </p>
+                <div class="mt-4">
+                    <span class="text-sm text-red-600 font-semibold">✓ भारतीय भाषाएँ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-20 bg-gradient-to-br from-green-50 to-emerald-50">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                How AgriConnect Works
+            </h2>
+            <p class="text-xl text-gray-600">
+                Simple steps to transform your farming journey
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-8">
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+                    1
+                </div>
+                <h3 class="text-lg font-bold mb-2">Register Your Account</h3>
+                <p class="text-gray-600">Sign up as Farmer, Consumer, or Supplier</p>
+            </div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+                    2
+                </div>
+                <h3 class="text-lg font-bold mb-2">Get AI Recommendations</h3>
+                <p class="text-gray-600">Input soil data and get crop suggestions</p>
+            </div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+                    3
+                </div>
+                <h3 class="text-lg font-bold mb-2">List or Buy Products</h3>
+                <p class="text-gray-600">Sell produce or purchase fresh farm products</p>
+            </div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+                    4
+                </div>
+                <h3 class="text-lg font-bold mb-2">Grow Your Business</h3>
+                <p class="text-gray-600">Access schemes, track prices, and expand</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-20">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                What Farmers Say
+            </h2>
+            <p class="text-xl text-gray-600">
+                Trusted by thousands of farmers across India
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="testimonial-card bg-white rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    "The AI crop recommendations helped me increase my wheat yield by 40%. 
+                    I never knew soil testing could be this useful!"
+                </p>
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold">Ramesh Kumar</h4>
+                        <p class="text-sm text-gray-500">Wheat Farmer, Punjab</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card bg-white rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    "Selling directly through the marketplace got me 25% better prices than 
+                    the local mandi. No middlemen, no hassle!"
+                </p>
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold">Priya Patel</h4>
+                        <p class="text-sm text-gray-500">Organic Farmer, Gujarat</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card bg-white rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    "The government schemes section helped me get a tractor subsidy. 
+                    The direct links to official portals made it so easy!"
+                </p>
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold">Suresh Reddy</h4>
+                        <p class="text-sm text-gray-500">Cotton Farmer, Telangana</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-gradient-to-r from-green-600 to-green-700">
+    <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+            Ready to Transform Your Farming?
+        </h2>
+        <p class="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+            Join thousands of farmers already using AgriConnect to increase their yield and income
+        </p>
+        <a href="{{ url_for('auth.auth_home') }}" 
+           class="inline-block bg-white text-green-600 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition transform hover:scale-105">
+            Get Started Today
+        </a>
+    </div>
+</section>
+
+<style>
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 1s ease-out;
+}
+
+.feature-card, .testimonial-card, .stat-card {
+    animation: fadeIn 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover, .testimonial-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card {
+    animation: fadeIn 0.8s ease-out;
+}
+</style>
+
+<script>
+// Animate stats on scroll
+const observerOptions = {
+    threshold: 0.5,
+    rootMargin: "0px"
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const element = entry.target;
+            if (element.id === 'farmersCount') {
+                animateNumber(element, 10000, 15000);
+            } else if (element.id === 'ordersCount') {
+                animateNumber(element, 50000, 65000);
+            } else if (element.id === 'cropsCount') {
+                animateNumber(element, 25, 30);
+            }
+            observer.unobserve(element);
+        }
+    });
+}, observerOptions);
+
+function animateNumber(element, start, end) {
+    let current = start;
+    const increment = (end - start) / 50;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+            element.textContent = end.toLocaleString() + '+';
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current).toLocaleString() + '+';
+        }
+    }, 40);
+}
+
+// Observe stat elements
+document.querySelectorAll('#farmersCount, #ordersCount, #cropsCount').forEach(el => {
+    observer.observe(el);
+});
+</script>
+{% endblock %}

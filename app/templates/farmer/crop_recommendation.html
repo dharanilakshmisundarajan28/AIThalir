@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}AI Crop Recommendation - Farmer Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-green-500 p-6">
+                <h1 class="text-2xl font-bold text-white">🤖 AI Crop Recommendation System</h1>
+                <p class="text-green-100 mt-1">Get smart crop suggestions based on your soil parameters and weather conditions</p>
+            </div>
+            
+            <div class="p-6">
+                <form id="recommendationForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🌱 Nitrogen (N) mg/kg</label>
+                            <input type="number" step="any" name="nitrogen" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <p class="text-xs text-gray-500 mt-1">Ideal range: 50-150 mg/kg</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🌿 Phosphorus (P) mg/kg</label>
+                            <input type="number" step="any" name="phosphorus" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <p class="text-xs text-gray-500 mt-1">Ideal range: 20-80 mg/kg</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🍂 Potassium (K) mg/kg</label>
+                            <input type="number" step="any" name="potassium" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <p class="text-xs text-gray-500 mt-1">Ideal range: 30-100 mg/kg</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🔬 Soil pH Level</label>
+                            <input type="number" step="0.1" name="ph" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <p class="text-xs text-gray-500 mt-1">Ideal range: 5.5-7.5</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🌡️ Temperature (°C)</label>
+                            <input type="number" step="any" name="temperature" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button type="button" onclick="getLiveWeather()" class="mt-1 text-sm text-green-600 hover:underline">
+                                <i class="fas fa-cloud-sun"></i> Get Live Weather
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">💧 Humidity (%)</label>
+                            <input type="number" step="any" name="humidity" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">☔ Rainfall (mm)</label>
+                            <input type="number" step="any" name="rainfall" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">📍 Location (for weather)</label>
+                            <input type="text" name="location" id="location" placeholder="City name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                        Get Crop Recommendation
+                    </button>
+                </form>
+                
+                <!-- Results Section -->
+                <div id="results" class="mt-8 hidden">
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-400">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">🌾 AI Recommendation Result</h3>
+                        <div id="recommendationResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function getLiveWeather() {
+    const location = document.getElementById('location').value;
+    if (!location) {
+        alert('Please enter a location first');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/farmer/api/weather?location=${encodeURIComponent(location)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            document.querySelector('input[name="temperature"]').value = data.temperature;
+            document.querySelector('input[name="humidity"]').value = data.humidity;
+            alert('Weather data loaded successfully!');
+        } else {
+            alert('Could not fetch weather data');
+        }
+    } catch (error) {
+        alert('Error fetching weather data');
+    }
+}
+
+document.getElementById('recommendationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/farmer/crop-recommendation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const rec = result.recommendation;
+            document.getElementById('recommendationResult').innerHTML = `
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🌾</div>
+                    <h2 class="text-3xl font-bold text-green-700 mb-2">${rec.crop}</h2>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                        <div class="bg-green-600 h-4 rounded-full" style="width: ${rec.confidence * 100}%"></div>
+                    </div>
+                    <p class="text-sm text-gray-600">Confidence: ${(rec.confidence * 100).toFixed(1)}%</p>
+                    
+                    <div class="mt-6 grid grid-cols-2 gap-4 text-left">
+                        <div class="bg-white rounded-lg p-3">
+                            <p class="text-xs text-gray-500">Nitrogen</p>
+                            <p class="font-semibold">${rec.parameters.nitrogen} mg/kg</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3">
+                            <p class="text-xs text-gray-500">Phosphorus</p>
+                            <p class="font-semibold">${rec.parameters.phosphorus} mg/kg</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3">
+                            <p class="text-xs text-gray-500">Potassium</p>
+                            <p class="font-semibold">${rec.parameters.potassium} mg/kg</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3">
+                            <p class="text-xs text-gray-500">pH Level</p>
+                            <p class="font-semibold">${rec.parameters.ph}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                        <p class="text-sm text-green-800">
+                            <i class="fas fa-lightbulb"></i> Based on your soil parameters and weather conditions, 
+                            <strong>${rec.crop}</strong> is the most suitable crop for your farm.
+                        </p>
+                    </div>
+
+                    ${result.save_warning ? `
+                    <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p class="text-sm text-amber-800">
+                            <i class="fas fa-circle-exclamation"></i> ${result.save_warning}
+                        </p>
+                    </div>` : ''}
+                </div>
+            `;
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error getting recommendation');
+    }
+});
+</script>
+{% endblock %}

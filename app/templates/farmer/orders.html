@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Farmer Orders - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-2xl p-8 text-white mb-8">
+            <h1 class="text-3xl font-bold">Orders for Your Products</h1>
+            <p class="mt-2">Track what consumers ordered and update the delivery status.</p>
+            <p class="mt-4 text-indigo-100">Total revenue: ₹{{ '%.2f'|format(total_revenue) }}</p>
+        </div>
+
+        <div class="space-y-5">
+            {% for order, item, product in orders %}
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">{{ product.name }}</h2>
+                        <p class="text-sm text-gray-500">Order {{ order.order_number }} | {{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</p>
+                        <p class="text-sm text-gray-600 mt-2">Buyer: {{ order.buyer.username }} | Address: {{ order.shipping_address or 'Not provided' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Quantity</p>
+                        <p class="font-semibold text-gray-800">{{ item.quantity }} {{ product.unit }}</p>
+                        <p class="mt-2 text-lg font-bold text-green-700">₹{{ '%.2f'|format(item.price * item.quantity) }}</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 grid md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">Product Details</p>
+                        <p class="font-semibold text-gray-800">{{ product.description or 'No details provided' }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">Current Status</p>
+                        <p class="font-semibold text-blue-700 capitalize">{{ order.status }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <label class="text-sm text-gray-500 block mb-2">Update Status</label>
+                        <div class="flex gap-2">
+                            <select id="status-{{ order.id }}" class="flex-1 px-3 py-2 border rounded-lg">
+                                {% for status in ['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled'] %}
+                                <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="updateOrderStatus({{ order.id }})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-white rounded-2xl shadow-lg p-10 text-center text-gray-500">
+                No orders yet for your farm products.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function updateOrderStatus(orderId) {
+    const status = document.getElementById(`status-${orderId}`).value;
+    const response = await fetch(`/farmer/update-order-status/${orderId}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status})
+    });
+    const result = await response.json();
+    if (result.success) {
+        window.location.reload();
+    } else {
+        alert(result.error || 'Could not update order status');
+    }
+}
+</script>
+{% endblock %}

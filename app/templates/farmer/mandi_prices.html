@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Mandi Prices - Real-time Market Rates{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-500 p-6">
+                <h1 class="text-2xl font-bold text-white">📊 Mandi Price Dashboard</h1>
+                <p class="text-blue-100 mt-1">Real-time wholesale market prices across India</p>
+            </div>
+            
+            <div class="p-6">
+                <!-- Search and Filter -->
+                <div class="mb-6 flex flex-wrap gap-4">
+                    <input type="text" id="searchCommodity" placeholder="Search commodity..." 
+                           class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterState" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All States</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Haryana">Haryana</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="Gujarat">Gujarat</option>
+                    </select>
+                </div>
+                
+                <!-- Price Cards -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="priceCards">
+                    {% for commodity, prices in price_data.items() %}
+                    <div class="price-card bg-white border rounded-xl p-4 hover:shadow-lg transition" 
+                         data-commodity="{{ commodity.lower() }}" data-state="{{ prices[0].state }}">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-bold text-lg text-gray-800">{{ commodity }}</h3>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">{{ prices[0].state }}</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Market:</span>
+                                <span class="font-semibold">{{ prices[0].market }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Min Price:</span>
+                                <span class="text-green-600 font-semibold">₹{{ "%.2f"|format(prices[0].min_price) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Max Price:</span>
+                                <span class="text-red-600 font-semibold">₹{{ "%.2f"|format(prices[0].max_price) }}</span>
+                            </div>
+                            <div class="flex justify-between border-t pt-2 mt-2">
+                                <span class="text-gray-600 font-bold">Modal Price:</span>
+                                <span class="text-blue-600 font-bold text-lg">₹{{ "%.2f"|format(prices[0].modal_price) }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-400">
+                            Updated: {{ prices[0].updated_at.strftime('%d %b, %Y') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if not price_data %}
+                <div class="text-center py-12">
+                    <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">No price data available. Please check back later.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search and filter functionality
+const searchInput = document.getElementById('searchCommodity');
+const stateFilter = document.getElementById('filterState');
+
+function filterPrices() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedState = stateFilter.value;
+    
+    const cards = document.querySelectorAll('.price-card');
+    
+    cards.forEach(card => {
+        const commodity = card.dataset.commodity;
+        const state = card.dataset.state;
+        
+        const matchesSearch = commodity.includes(searchTerm);
+        const matchesState = selectedState === 'all' || state === selectedState;
+        
+        if (matchesSearch && matchesState) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+searchInput.addEventListener('input', filterPrices);
+stateFilter.addEventListener('change', filterPrices);
+</script>
+{% endblock %}

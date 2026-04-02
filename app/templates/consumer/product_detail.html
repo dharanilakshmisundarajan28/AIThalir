@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Product Details - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="grid lg:grid-cols-2 gap-0">
+                <img src="{{ product.image_url or 'https://via.placeholder.com/800x600?text=Product' }}" alt="{{ product.name }}" class="w-full h-full min-h-[320px] object-cover">
+                <div class="p-8">
+                    <p class="text-sm text-gray-500">{{ product.category|capitalize }}</p>
+                    <h1 class="text-3xl font-bold text-gray-800 mt-2">{{ product.name }}</h1>
+                    <p class="text-gray-600 mt-4">{{ product.description or 'No details available.' }}</p>
+
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-sm text-gray-500">Price</p>
+                            <p class="text-2xl font-bold text-green-700">₹{{ product.price }}</p>
+                            <p class="text-sm text-gray-500">per {{ product.unit }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-sm text-gray-500">Available Stock</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ product.quantity }}</p>
+                            <p class="text-sm text-gray-500">{{ product.unit }}</p>
+                        </div>
+                    </div>
+
+                    <p class="mt-6 text-sm text-gray-500">
+                        Seller: {{ product.seller.farm_name or product.seller.company_name or product.seller.username }}
+                    </p>
+
+                    {% if current_user.is_authenticated and current_user.role.value in ['consumer', 'farmer'] %}
+                    <button onclick="addToCart({{ product.id }})" class="mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
+                        Add to Cart
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function addToCart(productId) {
+    const response = await fetch(`/marketplace/add-to-cart/${productId}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({quantity: 1})
+    });
+    const result = await response.json();
+    if (result.success) {
+        window.location.href = "{{ url_for('marketplace.view_cart') }}";
+    } else {
+        alert(result.error || 'Could not add product to cart');
+    }
+}
+</script>
+{% endblock %}

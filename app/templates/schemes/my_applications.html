@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}My Scheme Applications - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-600 to-red-500 p-6">
+                <h1 class="text-2xl font-bold text-white">📋 My Scheme Applications</h1>
+                <p class="text-orange-100 mt-1">Track your government scheme applications</p>
+            </div>
+            
+            <div class="p-6">
+                {% if applications %}
+                <div class="space-y-4">
+                    {% for app in applications %}
+                    <div class="border rounded-lg p-4 hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-gray-800">{{ app.scheme.name }}</h3>
+                                <p class="text-sm text-gray-500">Applied on: {{ app.applied_at.strftime('%d %B, %Y') }}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-sm
+                                {% if app.status == 'pending' %}bg-yellow-100 text-yellow-700
+                                {% elif app.status == 'approved' %}bg-green-100 text-green-700
+                                {% elif app.status == 'rejected' %}bg-red-100 text-red-700
+                                {% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ app.status|capitalize }}
+                            </span>
+                        </div>
+                        
+                        <div class="text-sm text-gray-600 mb-3">
+                            <p><strong>Scheme Type:</strong> {{ app.scheme.scheme_type|capitalize }}</p>
+                            <p><strong>Benefits:</strong> {{ app.scheme.benefits }}</p>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <a href="{{ app.scheme.official_url }}" target="_blank" 
+                               class="text-blue-600 hover:text-blue-800 text-sm">
+                                <i class="fas fa-external-link-alt"></i> Visit Official Portal
+                            </a>
+                            {% if app.notes %}
+                            <span class="text-gray-500 text-sm">
+                                <i class="fas fa-sticky-note"></i> {{ app.notes }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-file-alt text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No applications yet</h3>
+                    <p class="text-gray-500 mb-6">You haven't applied for any government schemes yet</p>
+                    <a href="{{ url_for('schemes.list_schemes') }}" 
+                       class="inline-block bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition">
+                        Browse Schemes
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Consumer Dashboard - Shop Fresh Produce{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white mb-8">
+            <h1 class="text-3xl font-bold">Fresh from Farm to Table! 🛒</h1>
+            <p class="mt-2">Discover the best quality agricultural products directly from farmers</p>
+        </div>
+        
+        <!-- Categories -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Shop by Category</h2>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="filterProducts('all', this)" class="category-btn active px-4 py-2 rounded-full bg-green-600 text-white">All Products</button>
+                <button onclick="filterProducts('vegetables', this)" class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-green-100">Vegetables</button>
+                <button onclick="filterProducts('fruits', this)" class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-green-100">Fruits</button>
+                <button onclick="filterProducts('grains', this)" class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-green-100">Grains</button>
+                <button onclick="filterProducts('organic', this)" class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-green-100">Organic</button>
+            </div>
+        </div>
+        
+        <!-- Products Grid -->
+        <div id="productsGrid" class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition" data-category="{{ product.category }}">
+                <img src="{{ product.image_url or 'https://via.placeholder.com/300x200' }}" alt="{{ product.name }}" class="w-full h-48 object-cover">
+                <div class="p-4">
+                    <h3 class="font-bold text-gray-800">{{ product.name }}</h3>
+                    <p class="text-sm text-gray-500 mt-1">{{ product.description[:60] }}</p>
+                    <div class="mt-3 flex justify-between items-center">
+                        <div>
+                            <span class="text-xl font-bold text-green-600">₹{{ product.price }}</span>
+                            <span class="text-sm text-gray-500">/{{ product.unit }}</span>
+                        </div>
+                        <button onclick="addToCart({{ product.id }})" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                            <i class="fas fa-cart-plus"></i> Add
+                        </button>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-store"></i> {{ product.seller.farm_name or product.seller.company_name or product.seller.username }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Cart Summary -->
+        <div class="fixed bottom-4 right-4 z-50">
+            <a href="{{ url_for('marketplace.view_cart') }}" class="bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition flex items-center space-x-2">
+                <i class="fas fa-shopping-cart text-xl"></i>
+                <span id="cartCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1">{{ cart_count or 0 }}</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFilter = 'all';
+
+function filterProducts(category, button) {
+    currentFilter = category;
+    
+    // Update active button style
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('bg-green-600', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+    if (button) {
+        button.classList.remove('bg-gray-200', 'text-gray-700');
+        button.classList.add('bg-green-600', 'text-white');
+    }
+    
+    // Filter products
+    const products = document.querySelectorAll('.product-card');
+    products.forEach(product => {
+        if (category === 'all' || product.dataset.category === category) {
+            product.style.display = 'block';
+        } else {
+            product.style.display = 'none';
+        }
+    });
+}
+
+async function addToCart(productId) {
+    try {
+        const response = await fetch(`/marketplace/add-to-cart/${productId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({quantity: 1})
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update cart count
+            const cartCount = document.getElementById('cartCount');
+            let count = parseInt(cartCount.innerText) || 0;
+            cartCount.innerText = count + 1;
+            
+            // Show notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.innerHTML = 'Added to cart!';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+    }
+}
+</script>
+{% endblock %}

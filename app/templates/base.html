@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AgriConnect{% endblock %}</title>
+    <meta name="description" content="AgriConnect platform for farmers, consumers, suppliers, and crop recommendations.">
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gradient-to-br from-lime-50 via-white to-emerald-100 text-gray-900">
+    <nav class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-3">
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                    <i class="fas fa-seedling text-green-600 text-2xl"></i>
+                    <span class="text-xl font-bold text-gray-800">AgriConnect</span>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{{ url_for('index') }}" class="text-gray-700 hover:text-green-600 transition">Home</a>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role.value == 'farmer' %}
+                            <a href="{{ url_for('farmer.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
+                            <a href="{{ url_for('farmer.manage_products') }}" class="text-gray-700 hover:text-green-600">My Products</a>
+                            <a href="{{ url_for('farmer.view_orders') }}" class="text-gray-700 hover:text-green-600">My Orders</a>
+                            <a href="{{ url_for('farmer.crop_recommendation') }}" class="text-gray-700 hover:text-green-600">Crop Advisor</a>
+                            <a href="{{ url_for('farmer.mandi_prices') }}" class="text-gray-700 hover:text-green-600">Mandi Prices</a>
+                        {% elif current_user.role.value == 'consumer' %}
+                            <a href="{{ url_for('consumer.dashboard') }}" class="text-gray-700 hover:text-green-600">Shop</a>
+                            <a href="{{ url_for('consumer.my_orders') }}" class="text-gray-700 hover:text-green-600">My Orders</a>
+                            <a href="{{ url_for('marketplace.view_cart') }}" class="text-gray-700 hover:text-green-600">My Cart</a>
+                        {% elif current_user.role.value == 'supplier' %}
+                            <a href="{{ url_for('supplier.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
+                            <a href="{{ url_for('supplier.manage_products') }}" class="text-gray-700 hover:text-green-600">Manage Products</a>
+                        {% elif current_user.role.value == 'admin' %}
+                            <a href="{{ url_for('admin.dashboard') }}" class="text-gray-700 hover:text-green-600">Admin Panel</a>
+                        {% endif %}
+                        <a href="{{ url_for('schemes.list_schemes') }}" class="text-gray-700 hover:text-green-600">Govt Schemes</a>
+                        <a href="{{ url_for('marketplace.products') }}" class="text-gray-700 hover:text-green-600">Marketplace</a>
+                        <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-red-600">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.auth_home') }}" class="text-gray-700 hover:text-green-600">Login Portal</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <section class="container mx-auto px-4 pt-6">
+                {% for category, message in messages %}
+                    <div class="mb-3 rounded-xl border px-4 py-3 shadow-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-green-200 bg-green-50 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </section>
+        {% endif %}
+    {% endwith %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

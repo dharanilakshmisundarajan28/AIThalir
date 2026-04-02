@@ -1,0 +1,4 @@
+/* dashboard placeholder */
+.dashboard { display:flex; gap:20px; }
+.sidebar { width: 220px; background:#f5f5f5; padding: 10px; }
+.main { flex:1; }

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Products - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
+            <div class="flex flex-wrap gap-4">
+                <select id="categoryFilter" class="px-4 py-2 border rounded-lg">
+                    <option value="all">All Categories</option>
+                    <option value="vegetables">Vegetables</option>
+                    <option value="fruits">Fruits</option>
+                    <option value="grains">Grains</option>
+                    <option value="organic">Organic</option>
+                </select>
+                
+                <select id="typeFilter" class="px-4 py-2 border rounded-lg">
+                    <option value="all">All Products</option>
+                    <option value="crop">Fresh Produce</option>
+                    <option value="fertilizer">Fertilizers</option>
+                </select>
+                
+                <input type="text" id="searchInput" placeholder="Search products..." 
+                       class="flex-1 px-4 py-2 border rounded-lg">
+                
+                <button onclick="applyFilters()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+        
+        <!-- Products Grid -->
+        <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6" id="productsGrid">
+            {% for product in products %}
+            <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition"
+                 data-category="{{ product.category }}" 
+                 data-type="{{ 'fertilizer' if product.is_fertilizer else 'crop' }}"
+                 data-name="{{ product.name.lower() }}">
+                <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400' }}" 
+                     alt="{{ product.name }}" class="w-full h-48 object-cover">
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">{{ product.name }}</h3>
+                        {% if product.is_fertilizer %}
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Fertilizer</span>
+                        {% else %}
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Fresh</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-gray-500 mb-2">{{ product.description[:80] }}</p>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xl font-bold text-green-600">₹{{ "%.2f"|format(product.price) }}</span>
+                            <span class="text-sm text-gray-500">/{{ product.unit }}</span>
+                        </div>
+                        <button onclick="addToCart({{ product.id }})" 
+                                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                            <i class="fas fa-cart-plus"></i> Add
+                        </button>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-store"></i> {{ product.seller.farm_name or product.seller.company_name or product.seller.username }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if not products %}
+        <div class="text-center py-12">
+            <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600">No products found</h3>
+            <p class="text-gray-500">Try adjusting your filters</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function applyFilters() {
+    const category = document.getElementById('categoryFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    const products = document.querySelectorAll('.product-card');
+    
+    products.forEach(product => {
+        const productCategory = product.dataset.category;
+        const productType = product.dataset.type;
+        const productName = product.dataset.name;
+        
+        let show = true;
+        
+        if (category !== 'all' && productCategory !== category) show = false;
+        if (type !== 'all' && productType !== type) show = false;
+        if (search && !productName.includes(search)) show = false;
+        
+        product.style.display = show ? 'block' : 'none';
+    });
+}
+
+async function addToCart(productId) {
+    try {
+        const response = await fetch(`/marketplace/add-to-cart/${productId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({quantity: 1})
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+            notification.innerHTML = '<i class="fas fa-check-circle"></i> Added to cart!';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error adding to cart');
+    }
+}
+
+// Add event listeners
+document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+document.getElementById('typeFilter').addEventListener('change', applyFilters);
+document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+</script>
+{% endblock %}

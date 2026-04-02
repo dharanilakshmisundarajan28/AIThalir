@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Products - Supplier Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-500 p-6">
+                <h1 class="text-2xl font-bold text-white">📦 Manage Products</h1>
+                <p class="text-purple-100 mt-1">Add, edit, and manage your fertilizer products</p>
+            </div>
+            
+            <div class="p-6">
+                <!-- Add Product Form -->
+                <div class="bg-purple-50 rounded-xl p-6 mb-8">
+                    <h2 class="text-lg font-bold mb-4">Add New Product</h2>
+                    <form id="addProductForm" class="grid md:grid-cols-3 gap-4">
+                        <input type="text" name="name" placeholder="Product Name" required 
+                               class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" name="description" placeholder="Description" 
+                               class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="number" step="0.01" name="price" placeholder="Price (₹)" required 
+                               class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="number" step="0.01" name="quantity" placeholder="Quantity (kg)" required 
+                               class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <select name="fertilizer_type" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="NPK">NPK Fertilizer</option>
+                            <option value="Urea">Urea</option>
+                            <option value="DAP">DAP</option>
+                            <option value="Potash">Potash</option>
+                            <option value="Organic">Organic Fertilizer</option>
+                            <option value="Bio">Bio Fertilizer</option>
+                        </select>
+                        <button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-plus"></i> Add Product
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Product</th>
+                                <th class="px-4 py-3 text-left">Type</th>
+                                <th class="px-4 py-3 text-left">Price</th>
+                                <th class="px-4 py-3 text-left">Stock</th>
+                                <th class="px-4 py-3 text-left">Status</th>
+                                <th class="px-4 py-3 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr class="border-t hover:bg-gray-50">
+                                <td class="px-4 py-3">
+                                    <div>
+                                        <div class="font-semibold">{{ product.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ product.description[:50] }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">{{ product.fertilizer_type or 'Fertilizer' }}</td>
+                                <td class="px-4 py-3">₹{{ "%.2f"|format(product.price) }}/{{ product.unit }}</td>
+                                <td class="px-4 py-3">{{ product.quantity }} kg</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 rounded-full text-xs {% if product.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ 'Available' if product.is_available else 'Out of Stock' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <button onclick="editProduct({{ product.id }})" 
+                                            class="text-blue-600 hover:text-blue-800 mr-2">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="toggleProduct({{ product.id }})" 
+                                            class="text-green-600 hover:text-green-800">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {};
+    formData.forEach((value, key) => { data[key] = value });
+    data.is_fertilizer = true;
+    data.unit = 'kg';
+    
+    try {
+        const response = await fetch('/supplier/add-product', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Error adding product: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error adding product');
+    }
+});
+
+async function toggleProduct(productId) {
+    try {
+        const response = await fetch(`/supplier/toggle-product/${productId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        alert('Error updating product');
+    }
+}
+
+function editProduct(productId) {
+    const newPrice = prompt('Enter new price:');
+    if (newPrice) {
+        updateProduct(productId, { price: parseFloat(newPrice) });
+    }
+}
+
+async function updateProduct(productId, updates) {
+    try {
+        const response = await fetch(`/supplier/update-product/${productId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updates)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        alert('Error updating product');
+    }
+}
+</script>
+{% endblock %}

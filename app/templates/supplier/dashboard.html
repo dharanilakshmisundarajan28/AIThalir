@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Dashboard - Manage Fertilizers{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-8 text-white mb-8">
+            <h1 class="text-3xl font-bold">Supplier Dashboard</h1>
+            <p class="mt-2">{{ current_user.company_name or current_user.username }}</p>
+            <p class="text-sm opacity-90">GST: {{ current_user.gst_number or 'Not provided' }}</p>
+        </div>
+        
+        <!-- Stats -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Products</p>
+                        <h3 class="text-2xl font-bold">{{ products|length }}</h3>
+                    </div>
+                    <i class="fas fa-boxes text-3xl text-purple-500"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Orders</p>
+                        <h3 class="text-2xl font-bold">{{ orders_count or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-truck text-3xl text-blue-500"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Revenue</p>
+                        <h3 class="text-2xl font-bold">₹{{ revenue or 0 }}</h3>
+                    </div>
+                    <i class="fas fa-rupee-sign text-3xl text-green-500"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Product Form -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Add New Fertilizer Product</h2>
+            <form id="addProductForm" class="grid md:grid-cols-3 gap-4">
+                <input type="text" name="name" placeholder="Product Name" required class="px-4 py-2 border rounded-lg">
+                <input type="text" name="description" placeholder="Description" class="px-4 py-2 border rounded-lg">
+                <input type="number" name="price" placeholder="Price (₹)" required class="px-4 py-2 border rounded-lg">
+                <input type="number" name="quantity" placeholder="Quantity (kg)" required class="px-4 py-2 border rounded-lg">
+                <select name="fertilizer_type" class="px-4 py-2 border rounded-lg">
+                    <option value="NPK">NPK Fertilizer</option>
+                    <option value="Urea">Urea</option>
+                    <option value="DAP">DAP</option>
+                    <option value="Potash">Potash</option>
+                    <option value="Organic">Organic Fertilizer</option>
+                </select>
+                <button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
+                    Add Product
+                </button>
+            </form>
+        </div>
+        
+        <!-- Products List -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Your Products</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Product</th>
+                            <th class="px-4 py-2 text-left">Type</th>
+                            <th class="px-4 py-2 text-left">Price</th>
+                            <th class="px-4 py-2 text-left">Quantity</th>
+                            <th class="px-4 py-2 text-left">Status</th>
+                            <th class="px-4 py-2 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr class="border-t">
+                            <td class="px-4 py-2">{{ product.name }}</td>
+                            <td class="px-4 py-2">{{ product.fertilizer_type or 'Fertilizer' }}</td>
+                            <td class="px-4 py-2">₹{{ product.price }}/{{ product.unit }}</td>
+                            <td class="px-4 py-2">{{ product.quantity }} kg</td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-1 rounded-full text-xs {% if product.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {{ 'Available' if product.is_available else 'Out of Stock' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2">
+                                <button onclick="toggleProductStatus({{ product.id }})" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-toggle-on"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    data.is_fertilizer = true;
+    
+    try {
+        const response = await fetch('/supplier/add-product', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Error adding product');
+        }
+    } catch (error) {
+        alert('Error adding product');
+    }
+});
+
+async function toggleProductStatus(productId) {
+    try {
+        const response = await fetch(`/supplier/toggle-product/${productId}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.success) location.reload();
+    } catch (error) {
+        alert('Error updating product');
+    }
+}
+</script>
+{% endblock %}

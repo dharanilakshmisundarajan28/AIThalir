@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Platform Management{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-8 text-white mb-8">
+            <h1 class="text-3xl font-bold">Admin Control Panel</h1>
+            <p class="mt-2">Manage users, monitor platform, and oversee operations</p>
+        </div>
+        
+        <!-- Platform Stats -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Users</p>
+                        <h3 class="text-2xl font-bold">{{ stats.total_users }}</h3>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-500"></i>
+                </div>
+                <div class="mt-2 text-sm">
+                    <span class="text-green-600">{{ stats.farmers }} Farmers</span> |
+                    <span class="text-purple-600">{{ stats.consumers }} Consumers</span> |
+                    <span class="text-orange-600">{{ stats.suppliers }} Suppliers</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Products</p>
+                        <h3 class="text-2xl font-bold">{{ stats.total_products }}</h3>
+                    </div>
+                    <i class="fas fa-box text-3xl text-green-500"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Orders</p>
+                        <h3 class="text-2xl font-bold">{{ stats.total_orders }}</h3>
+                    </div>
+                    <i class="fas fa-shopping-cart text-3xl text-yellow-500"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Revenue</p>
+                        <h3 class="text-2xl font-bold">₹{{ stats.total_revenue }}</h3>
+                    </div>
+                    <i class="fas fa-chart-line text-3xl text-purple-500"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Management Tabs -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="border-b">
+                <div class="flex">
+                    <button class="tab-btn active px-6 py-3 text-gray-700 hover:text-red-600 border-b-2 border-red-600" onclick="showTab('farmers')">
+                        Farmers
+                    </button>
+                    <button class="tab-btn px-6 py-3 text-gray-700 hover:text-red-600" onclick="showTab('consumers')">
+                        Consumers
+                    </button>
+                    <button class="tab-btn px-6 py-3 text-gray-700 hover:text-red-600" onclick="showTab('suppliers')">
+                        Suppliers
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Farmers Table -->
+            <div id="farmersTab" class="tab-content p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Name</th>
+                                <th class="px-4 py-2 text-left">Email</th>
+                                <th class="px-4 py-2 text-left">Farm Name</th>
+                                <th class="px-4 py-2 text-left">Phone</th>
+                                <th class="px-4 py-2 text-left">Status</th>
+                                <th class="px-4 py-2 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for farmer in farmers %}
+                            <tr class="border-t">
+                                <td class="px-4 py-2">{{ farmer.username }}</td>
+                                <td class="px-4 py-2">{{ farmer.email }}</td>
+                                <td class="px-4 py-2">{{ farmer.farm_name or '-' }}</td>
+                                <td class="px-4 py-2">{{ farmer.phone or '-' }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-1 rounded-full text-xs {% if farmer.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ 'Active' if farmer.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2">
+                                    <button onclick="toggleUserStatus({{ farmer.id }})" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Consumers Table -->
+            <div id="consumersTab" class="tab-content p-6 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Name</th>
+                                <th class="px-4 py-2 text-left">Email</th>
+                                <th class="px-4 py-2 text-left">Phone</th>
+                                <th class="px-4 py-2 text-left">Orders</th>
+                                <th class="px-4 py-2 text-left">Status</th>
+                                <th class="px-4 py-2 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for consumer in consumers %}
+                            <tr class="border-t">
+                                <td class="px-4 py-2">{{ consumer.username }}</td>
+                                <td class="px-4 py-2">{{ consumer.email }}</td>
+                                <td class="px-4 py-2">{{ consumer.phone or '-' }}</td>
+                                <td class="px-4 py-2">{{ consumer.orders|length }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-1 rounded-full text-xs {% if consumer.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ 'Active' if consumer.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2">
+                                    <button onclick="toggleUserStatus({{ consumer.id }})" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Suppliers Table -->
+            <div id="suppliersTab" class="tab-content p-6 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Company</th>
+                                <th class="px-4 py-2 text-left">Email</th>
+                                <th class="px-4 py-2 text-left">GST</th>
+                                <th class="px-4 py-2 text-left">Products</th>
+                                <th class="px-4 py-2 text-left">Status</th>
+                                <th class="px-4 py-2 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for supplier in suppliers %}
+                            <tr class="border-t">
+                                <td class="px-4 py-2">{{ supplier.company_name or supplier.username }}</td>
+                                <td class="px-4 py-2">{{ supplier.email }}</td>
+                                <td class="px-4 py-2">{{ supplier.gst_number or '-' }}</td>
+                                <td class="px-4 py-2">{{ supplier.products|length }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-1 rounded-full text-xs {% if supplier.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {{ 'Active' if supplier.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2">
+                                    <button onclick="toggleUserStatus({{ supplier.id }})" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    // Show selected tab
+    document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+    
+    // Update button styles
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-red-600', 'text-red-600');
+        btn.classList.add('text-gray-700');
+    });
+    event.target.classList.add('border-red-600', 'text-red-600');
+}
+
+async function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to change this user\'s status?')) {
+        try {
+            const response = await fetch(`/admin/toggle-user/${userId}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (result.success) {
+                location.reload();
+            }
+        } catch (error) {
+            alert('Error updating user status');
+        }
+    }
+}
+</script>
+{% endblock %}
