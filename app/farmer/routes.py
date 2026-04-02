@@ -27,6 +27,35 @@ def _farmer_order_rows():
         Product.is_fertilizer.is_(False)
     ).order_by(Order.order_date.desc()).all()
 
+
+def _local_agri_chat_response(user_message):
+    message = (user_message or '').lower()
+
+    if any(word in message for word in ['fertilizer', 'urea', 'dap', 'npk', 'potash']):
+        return (
+            "Tell me the crop name first. Then I’ll suggest the best fertilizer in one short reply."
+        )
+    if any(word in message for word in ['pest', 'disease', 'insect', 'fungus', 'blight']):
+        return (
+            "Tell me the crop and the symptom. I’ll give a short treatment suggestion."
+        )
+    if any(word in message for word in ['water', 'irrigation', 'rain', 'moisture']):
+        return (
+            "Irrigate by soil moisture, avoid waterlogging, and water in the morning when possible."
+        )
+    if any(word in message for word in ['soil', 'ph', 'nitrogen', 'phosphorus', 'potassium']):
+        return (
+            "A soil test is best. Use balanced nutrients and keep soil pH suitable for the crop."
+        )
+    if any(word in message for word in ['crop', 'seed', 'variety', 'sowing']):
+        return (
+            "Choose certified seed that matches your local climate, water, and season."
+        )
+
+    return (
+        "Please share the crop name and exact issue. I’ll reply shortly and clearly."
+    )
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -277,21 +306,33 @@ def update_order_status(order_id):
 def chat():
     """AI Chatbot for farmer queries using Gemini API"""
     try:
-        user_message = request.json.get('message', '')
-        
-        # Initialize Gemini
-        genai.configure(api_key=current_app.config['GEMINI_API_KEY'])
-        model = genai.GenerativeModel('gemini-pro')
-        
-        # Context-specific prompt for agriculture
-        prompt = f"""You are an agricultural expert assistant helping farmers in India. 
-        Provide practical, accurate advice about crops, fertilizers, weather, and farming practices.
-        User question: {user_message}
-        
-        Give a helpful, concise response in simple language."""
-        
-        response = model.generate_content(prompt)
-        ai_response = response.text
+        payload = request.get_json(silent=True) or {}
+        user_message = (payload.get('message') or '').strip()
+        if not user_message:
+            return jsonify({'success': False, 'error': 'Please enter a message.'}), 400
+
+        api_key = current_app.config.get('GEMINI_API_KEY')
+        ai_response = None
+
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                prompt = f"""You are an agricultural expert assistant helping farmers in India.
+Provide practical, accurate advice about crops, fertilizers, weather, irrigation, pests, and farming practices.
+Keep the answer short and sweet.
+Use at most 3 short sentences.
+Avoid long lists.
+If key details are missing, ask only one short follow-up question.
+
+User question: {user_message}"""
+                response = model.generate_content(prompt)
+                ai_response = getattr(response, 'text', None)
+            except Exception:
+                ai_response = None
+
+        if not ai_response:
+            ai_response = _local_agri_chat_response(user_message)
         
         # Save chat history
         chat = ChatHistory(
@@ -299,8 +340,11 @@ def chat():
             message=user_message,
             response=ai_response
         )
-        db.session.add(chat)
-        db.session.commit()
+        try:
+            db.session.add(chat)
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
         
         return jsonify({'success': True, 'response': ai_response})
         

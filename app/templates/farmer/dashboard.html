@@ -279,6 +279,11 @@ async function sendMessage() {
         
         // Remove loading indicator
         document.getElementById('loadingMsg').remove();
+
+        if (!data.success) {
+            alert(data.error || 'Could not get chatbot response.');
+            return;
+        }
         
         // Add bot response
         const botMsgDiv = document.createElement('div');
