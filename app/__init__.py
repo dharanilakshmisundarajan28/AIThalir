@@ -7,7 +7,7 @@ import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+login_manager.login_view = 'auth.auth_home'
 login_manager.login_message = gettext('Please log in to access this page.')
 babel = Babel()
 
@@ -31,25 +31,25 @@ def create_app(config_class=Config):
     
     # Register blueprints
     from app.auth import bp as auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(auth_bp)
     
     from app.farmer import bp as farmer_bp
-    app.register_blueprint(farmer_bp, url_prefix='/farmer')
+    app.register_blueprint(farmer_bp)
     
     from app.consumer import bp as consumer_bp
-    app.register_blueprint(consumer_bp, url_prefix='/consumer')
+    app.register_blueprint(consumer_bp)
     
     from app.supplier import bp as supplier_bp
-    app.register_blueprint(supplier_bp, url_prefix='/supplier')
+    app.register_blueprint(supplier_bp)
     
     from app.admin import bp as admin_bp
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(admin_bp)
     
     from app.marketplace import bp as marketplace_bp
-    app.register_blueprint(marketplace_bp, url_prefix='/marketplace')
+    app.register_blueprint(marketplace_bp)
     
     from app.schemes import bp as schemes_bp
-    app.register_blueprint(schemes_bp, url_prefix='/schemes')
+    app.register_blueprint(schemes_bp)
     
     @app.route('/')
     def index():

@@ -1,6 +1,6 @@
 from app import create_app, db
 from app.models import User, UserRole, GovernmentScheme
-from datetime import datetime
+from app.schemes.defaults import get_default_schemes
 
 app = create_app()
 
@@ -73,39 +73,19 @@ def init_database():
             db.session.add(supplier)
         
         # Create government schemes
-        schemes_data = [
-            {
-                'name': 'PM-KISAN Samman Nidhi',
-                'description': 'Income support of Rs. 6000 per year to all landholding farmer families',
-                'scheme_type': 'subsidy',
-                'eligibility': 'All landholding farmers',
-                'benefits': 'Rs. 6000 per year in three installments',
-                'official_url': 'https://pmkisan.gov.in',
-                'deadline': datetime(2024, 12, 31)
-            },
-            {
-                'name': 'Pradhan Mantri Fasal Bima Yojana',
-                'description': 'Crop insurance scheme to protect farmers against crop loss',
-                'scheme_type': 'insurance',
-                'eligibility': 'All farmers growing notified crops',
-                'benefits': 'Insurance coverage for crop loss due to natural calamities',
-                'official_url': 'https://pmfby.gov.in',
-                'deadline': datetime(2024, 12, 31)
-            },
-            {
-                'name': 'National Agricultural Scholarship',
-                'description': 'Scholarship for students pursuing agricultural education',
-                'scheme_type': 'scholarship',
-                'eligibility': 'Students enrolled in agricultural courses',
-                'benefits': 'Up to Rs. 50,000 per year',
-                'official_url': 'https://education.gov.in/scholarships',
-                'deadline': datetime(2024, 10, 31)
-            }
-        ]
+        schemes_data = get_default_schemes()
         
         for scheme_data in schemes_data:
             existing = GovernmentScheme.query.filter_by(name=scheme_data['name']).first()
-            if not existing:
+            if existing:
+                updated = False
+                for field in ('description', 'scheme_type', 'eligibility', 'benefits', 'official_url', 'deadline'):
+                    if getattr(existing, field) != scheme_data[field]:
+                        setattr(existing, field, scheme_data[field])
+                        updated = True
+                if updated:
+                    db.session.add(existing)
+            else:
                 scheme = GovernmentScheme(**scheme_data)
                 db.session.add(scheme)
         

@@ -24,6 +24,8 @@ def load_model():
         model = joblib.load(model_path)
         scaler = joblib.load(scaler_path)
         feature_columns = joblib.load(features_path)
+        if hasattr(model, 'n_jobs'):
+            model.n_jobs = 1
     
     return model, scaler, feature_columns
 

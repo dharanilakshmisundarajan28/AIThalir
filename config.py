@@ -11,6 +11,7 @@ class Config:
     # API Keys
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     OPENWEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY')
+    MANDI_API_KEY = os.environ.get('MANDI_API_KEY')
     
     # Multilingual Support
     LANGUAGES = {

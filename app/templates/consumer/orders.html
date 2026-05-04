@@ -2,35 +2,203 @@
 
 {% block title %}My Orders - AgriConnect{% endblock %}
 
+{% block extra_head %}
+<style>
+    .orders-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .orders-card {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 24px;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+    }
+
+    .chart-shell {
+        position: relative;
+        width: min(100%, 16rem);
+        aspect-ratio: 1;
+        margin: 0 auto;
+    }
+
+    .pie-chart {
+        width: 100%;
+        height: 100%;
+        border-radius: 9999px;
+        background: var(--chart-gradient);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 20px 36px rgba(15,23,42,0.10);
+        position: relative;
+        animation: piePop 0.7s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .pie-chart::after {
+        content: "";
+        position: absolute;
+        inset: 19%;
+        border-radius: 9999px;
+        background: rgba(255,255,255,0.95);
+        box-shadow: inset 0 0 0 1px rgba(148,163,184,0.16);
+    }
+
+    .chart-center {
+        position: absolute;
+        inset: 50%;
+        transform: translate(-50%, -50%);
+        width: 44%;
+        text-align: center;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .chart-center strong {
+        display: block;
+        color: #0f172a;
+        font-size: 1.2rem;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .chart-center span {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .legend-item {
+        border: 1px solid transparent;
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .legend-item:hover, .legend-item.active {
+        transform: translateX(3px);
+        background: rgba(236,253,245,0.88);
+        border-color: rgba(34,197,94,0.18);
+    }
+
+    .status-chip {
+        border-radius: 9999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4">
-        <div class="bg-gradient-to-r from-blue-600 to-sky-700 rounded-2xl p-8 text-white mb-8">
-            <h1 class="text-3xl font-bold">My Orders</h1>
-            <p class="mt-2">Track all orders placed directly with farmers and suppliers.</p>
+<div class="px-4 py-4">
+    <div class="orders-shell">
+        <div class="mb-5">
+            <div class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Orders</div>
+            <h1 class="mt-1 text-2xl md:text-3xl font-black text-slate-900">My Orders</h1>
+            <p class="mt-1 text-sm text-slate-500">Track all orders placed directly with farmers and suppliers.</p>
         </div>
 
-        <div class="space-y-4">
-            {% for order in orders %}
-            <a href="{{ url_for('consumer.order_detail', order_number=order.order_number) }}" class="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="grid gap-4 lg:grid-cols-[360px_1fr] mb-5">
+            <div class="orders-card p-5">
+                <div class="flex items-center justify-between mb-3">
                     <div>
-                        <h2 class="text-lg font-bold text-gray-800">{{ order.order_number }}</h2>
-                        <p class="text-sm text-gray-500 mt-1">{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</p>
-                        <p class="text-sm text-gray-500 mt-2">{{ order.items|length }} items</p>
+                        <div class="font-extrabold text-slate-900">Order Status</div>
+                        <div class="text-sm text-slate-500">{{ total_orders }} total orders</div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-lg font-bold text-green-700">₹{{ '%.2f'|format(order.total_amount) }}</p>
-                        <span class="inline-block mt-2 px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize">{{ order.status }}</span>
+                    <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Hover</div>
+                </div>
+
+                <div class="chart-shell">
+                    <div id="orderStatusChart" class="pie-chart" style="--chart-gradient: {{ chart_gradient }};"></div>
+                    <div class="chart-center">
+                        <strong id="chartCenterValue">{{ total_orders or 0 }}</strong>
+                        <span id="chartCenterLabel">Orders</span>
                     </div>
                 </div>
-            </a>
-            {% else %}
-            <div class="bg-white rounded-2xl shadow-lg p-10 text-center text-gray-500">
-                You have not placed any orders yet.
+
+                <div class="mt-4 space-y-2">
+                    {% for segment in order_status_segments %}
+                    <button type="button" class="legend-item w-full rounded-2xl px-3 py-2 text-left" data-segment-index="{{ loop.index0 }}">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <span class="h-3.5 w-3.5 rounded-full shadow-sm" style="background: {{ segment.color }};"></span>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ segment.label }}</div>
+                                    <div class="text-xs text-slate-500">{{ segment.count }} orders</div>
+                                </div>
+                            </div>
+                            <div class="text-sm font-bold text-slate-900">{{ "%.0f"|format(segment.percent) }}%</div>
+                        </div>
+                    </button>
+                    {% else %}
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+                        No order data yet.
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            {% endfor %}
+
+            <div class="orders-card p-5">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <div class="font-extrabold text-slate-900">Order List</div>
+                        <div class="text-sm text-slate-500">Latest status updates shown here.</div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    {% for order in orders %}
+                    <a href="{{ url_for('consumer.order_detail', order_number=order.order_number) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-emerald-200 hover:bg-emerald-50/40">
+                        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <div class="text-base font-extrabold text-slate-900">{{ order.order_number }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ order.items|length }} items</div>
+                            </div>
+                            <div class="text-left md:text-right">
+                                <div class="text-lg font-black text-emerald-700">₹{{ '%.2f'|format(order.total_amount) }}</div>
+                                <span class="status-chip inline-block mt-2 {% if order.status == 'delivered' %}bg-emerald-100 text-emerald-700{% elif order.status in ['packed', 'shipped', 'confirmed'] %}bg-sky-100 text-sky-700{% elif order.status == 'cancelled' %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                                    {{ order.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">
+                        You have not placed any orders yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const orderStatusSegments = {{ order_status_segments|tojson }};
+
+function setChartActive(index) {
+    const valueEl = document.getElementById('chartCenterValue');
+    const labelEl = document.getElementById('chartCenterLabel');
+
+    document.querySelectorAll('.legend-item').forEach((item, i) => item.classList.toggle('active', i === index));
+
+    if (index === null || !orderStatusSegments[index]) {
+        valueEl.textContent = {{ total_orders or 0 }};
+        labelEl.textContent = 'Orders';
+        return;
+    }
+
+    const segment = orderStatusSegments[index];
+    valueEl.textContent = `${Math.round(segment.percent)}%`;
+    labelEl.textContent = segment.label;
+}
+
+document.querySelectorAll('.legend-item').forEach((item) => {
+    const index = Number(item.dataset.segmentIndex);
+    item.addEventListener('mouseenter', () => setChartActive(index));
+    item.addEventListener('mouseleave', () => setChartActive(null));
+});
+
+setChartActive(null);
+</script>
 {% endblock %}

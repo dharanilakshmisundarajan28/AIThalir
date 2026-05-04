@@ -2,102 +2,370 @@
 
 {% block title %}Farmer Products - AgriConnect{% endblock %}
 
+{% block extra_head %}
+<style>
+    :root {
+        --inv-bg: linear-gradient(180deg, #eff6ff 0%, #f8fafc 45%, #ecfdf5 100%);
+        --inv-card: rgba(255, 255, 255, 0.92);
+        --inv-border: rgba(148, 163, 184, 0.16);
+        --inv-text: #0f172a;
+        --inv-soft: #64748b;
+    }
+
+    body {
+        background: var(--inv-bg);
+    }
+
+    .inv-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+    }
+
+    .inv-card {
+        background: var(--inv-card);
+        border: 1px solid var(--inv-border);
+        border-radius: 22px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .inv-title {
+        color: var(--inv-text);
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+    }
+
+    .inv-soft {
+        color: var(--inv-soft);
+    }
+
+    .inv-tab {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(255, 255, 255, 0.82);
+        color: #475569;
+        transition: all 0.2s ease;
+    }
+
+    .inv-tab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(34, 197, 94, 0.24);
+        color: #166534;
+    }
+
+    .inv-tab.active {
+        background: linear-gradient(135deg, #16a34a 0%, #0f766e 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 12px 24px rgba(22, 163, 74, 0.2);
+    }
+
+    .inv-field {
+        border: 1px solid #dbe3ea;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 14px;
+        padding: 0.72rem 0.9rem;
+        font-size: 0.92rem;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .inv-field:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.8rem;
+    }
+
+    .product-card {
+        overflow: hidden;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .product-media {
+        width: 100%;
+        height: 6rem;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        background: #f8fafc;
+    }
+
+    .edit-panel {
+        display: none;
+    }
+
+    .edit-panel.open {
+        display: block;
+    }
+
+    .product-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        padding: 0.32rem 0.7rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .toast-stack {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 80;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        pointer-events: none;
+    }
+
+    .toast {
+        pointer-events: auto;
+        min-width: 280px;
+        max-width: 360px;
+        border-radius: 18px;
+        padding: 0.9rem 1rem;
+        color: white;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+        transform: translateY(12px);
+        opacity: 0;
+        animation: toastIn 0.24s ease forwards;
+    }
+
+    .toast.success {
+        background: linear-gradient(135deg, #16a34a 0%, #0f766e 100%);
+    }
+
+    .toast.error {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    }
+
+    @keyframes toastIn {
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .empty-state {
+        border: 1px dashed rgba(148, 163, 184, 0.3);
+        background: rgba(248, 250, 252, 0.92);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4">
-        <div class="bg-gradient-to-r from-green-700 to-emerald-600 rounded-2xl p-8 text-white mb-8">
-            <h1 class="text-3xl font-bold">Manage Farm Products</h1>
-            <p class="mt-2">Add produce with image, stock, price, and full details for consumers to order directly.</p>
+<div class="px-4 py-4">
+    <div class="inv-shell">
+        <div class="inv-card p-4 md:p-5 mb-4">
+            <div class="flex items-center gap-2">
+                    <button id="tabMyProducts" type="button" class="inv-tab active rounded-full px-4 py-2 text-sm font-semibold">
+                        My Products
+                    </button>
+                    <button id="tabAddProduct" type="button" class="inv-tab rounded-full px-4 py-2 text-sm font-semibold">
+                        Add Product
+                    </button>
+            </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Add New Product</h2>
-            <form id="addFarmerProductForm" class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <input type="text" name="name" placeholder="Product name" required class="px-4 py-3 border rounded-lg">
-                <input type="text" name="category" placeholder="Category: vegetables, fruits, grains" required class="px-4 py-3 border rounded-lg">
-                <input type="text" name="unit" placeholder="Unit: kg, bunch, bag" value="kg" class="px-4 py-3 border rounded-lg">
-                <input type="number" step="0.01" name="price" placeholder="Price" required class="px-4 py-3 border rounded-lg">
-                <input type="number" step="0.01" name="quantity" placeholder="Available stock" required class="px-4 py-3 border rounded-lg">
-                <input type="url" name="image_url" placeholder="Image URL" class="px-4 py-3 border rounded-lg">
-                <textarea name="description" placeholder="Product details" rows="3" class="md:col-span-2 xl:col-span-3 px-4 py-3 border rounded-lg"></textarea>
-                <button type="submit" class="md:col-span-2 xl:col-span-3 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                    Add Product
-                </button>
-            </form>
-        </div>
+        <div id="myProductsSection" class="inv-card p-4 md:p-5 mb-4">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-lg md:text-xl font-extrabold text-slate-900">My Products</h2>
+                    <p class="inv-soft text-sm">Available farm products visible to consumers.</p>
+                </div>
+                <div class="text-xs font-semibold text-slate-500">{{ products|length }} items</div>
+            </div>
 
-        <div class="grid lg:grid-cols-2 gap-6">
-            {% for product in products %}
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="flex flex-col md:flex-row">
-                    <img src="{{ product.image_url or 'https://via.placeholder.com/320x220?text=Farm+Product' }}" alt="{{ product.name }}" class="w-full md:w-48 h-48 object-cover">
-                    <div class="p-5 flex-1">
-                        <div class="flex items-start justify-between gap-4">
+            <div class="product-grid">
+                {% for product in products %}
+                <article class="product-card">
+                    <img src="{{ product.image_url or 'https://via.placeholder.com/640x420?text=Farm+Product' }}" alt="{{ product.name }}" class="product-media">
+                    <div class="p-3">
+                        <div class="flex items-start justify-between gap-3">
                             <div>
-                                <h3 class="text-xl font-bold text-gray-800">{{ product.name }}</h3>
-                                <p class="text-sm text-gray-500 mt-1">{{ product.category|capitalize }}</p>
+                                <h3 class="text-sm font-extrabold text-slate-900">{{ product.name }}</h3>
+                                <p class="mt-1 text-[10px] uppercase tracking-[0.12em] text-slate-500">{{ product.category|capitalize }}</p>
                             </div>
-                            <span class="px-3 py-1 rounded-full text-xs {% if product.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                            <span class="product-badge {% if product.is_available %}bg-emerald-100 text-emerald-700{% else %}bg-rose-100 text-rose-700{% endif %}">
                                 {{ 'Visible' if product.is_available else 'Hidden' }}
                             </span>
                         </div>
 
-                        <p class="text-sm text-gray-600 mt-3">{{ product.description or 'No product details added yet.' }}</p>
+                        <p class="mt-2 text-xs leading-5 text-slate-600">{{ product.description or 'No product details added yet.' }}</p>
 
-                        <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
-                            <div class="bg-gray-50 rounded-lg p-3">
-                                <p class="text-gray-500">Price</p>
-                                <p class="font-semibold text-green-700">₹{{ product.price }}/{{ product.unit }}</p>
+                        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                            <div class="rounded-2xl bg-slate-50 p-2.5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Price</p>
+                                <p class="mt-1 text-sm font-bold text-emerald-700">Rs. {{ product.price }}/{{ product.unit }}</p>
                             </div>
-                            <div class="bg-gray-50 rounded-lg p-3">
-                                <p class="text-gray-500">Stock</p>
-                                <p class="font-semibold text-gray-800">{{ product.quantity }} {{ product.unit }}</p>
+                            <div class="rounded-2xl bg-slate-50 p-2.5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Stock</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800">{{ product.quantity }} {{ product.unit }}</p>
                             </div>
                         </div>
 
-                        <form class="edit-product-form mt-4 grid grid-cols-2 gap-3" data-product-id="{{ product.id }}">
-                            <input type="text" name="name" value="{{ product.name }}" class="px-3 py-2 border rounded-lg">
-                            <input type="text" name="category" value="{{ product.category }}" class="px-3 py-2 border rounded-lg">
-                            <input type="number" step="0.01" name="price" value="{{ product.price }}" class="px-3 py-2 border rounded-lg">
-                            <input type="number" step="0.01" name="quantity" value="{{ product.quantity }}" class="px-3 py-2 border rounded-lg">
-                            <input type="text" name="unit" value="{{ product.unit }}" class="px-3 py-2 border rounded-lg">
-                            <input type="url" name="image_url" value="{{ product.image_url or '' }}" class="px-3 py-2 border rounded-lg" placeholder="Image URL">
-                            <textarea name="description" rows="2" class="col-span-2 px-3 py-2 border rounded-lg">{{ product.description or '' }}</textarea>
-                            <div class="col-span-2 flex flex-wrap gap-3">
-                                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">Save Changes</button>
-                                <button type="button" onclick="toggleProduct({{ product.id }})" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition">
-                                    {{ 'Hide Product' if product.is_available else 'Show Product' }}
-                                </button>
-                            </div>
-                        </form>
+                        <div class="mt-3 flex gap-2">
+                            <button type="button" onclick="toggleEdit({{ product.id }})" class="flex-1 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-200">
+                                Edit
+                            </button>
+                            <button type="button" onclick="toggleProduct({{ product.id }})" class="flex-1 rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-black">
+                                {{ 'Hide' if product.is_available else 'Show' }}
+                            </button>
+                        </div>
+
+                        <div id="edit-{{ product.id }}" class="edit-panel mt-3 rounded-2xl bg-slate-50 p-3">
+                            <form class="edit-product-form grid grid-cols-2 gap-2" data-product-id="{{ product.id }}">
+                                <input type="text" name="name" value="{{ product.name }}" class="inv-field text-sm">
+                                <input type="text" name="category" value="{{ product.category }}" class="inv-field text-sm">
+                                <input type="number" step="0.01" name="price" value="{{ product.price }}" class="inv-field text-sm">
+                                <input type="number" step="0.01" name="quantity" value="{{ product.quantity }}" class="inv-field text-sm">
+                                <input type="text" name="unit" value="{{ product.unit }}" class="inv-field text-sm">
+                                <input type="url" name="image_url" value="{{ product.image_url or '' }}" class="inv-field text-sm" placeholder="Image URL">
+                                <textarea name="description" rows="2" class="inv-field col-span-2 text-sm">{{ product.description or '' }}</textarea>
+                                <div class="col-span-2 flex flex-wrap gap-2">
+                                    <button type="submit" class="rounded-full bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                                        Save
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
+                </article>
+                {% else %}
+                <div class="empty-state md:col-span-2 lg:col-span-3">
+                    No products yet. Add your first farm product using the Add Product tab.
                 </div>
+                {% endfor %}
             </div>
-            {% else %}
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-10 text-center text-gray-500">
-                No products yet. Add your first farm product above.
+        </div>
+
+        <div id="addProductSection" class="inv-card p-4 md:p-5 hidden">
+            <div class="mb-4">
+                <h2 class="text-lg md:text-xl font-extrabold text-slate-900">Add New Product</h2>
+                <p class="inv-soft text-sm">Create a product and it will appear immediately in My Products.</p>
             </div>
-            {% endfor %}
+
+            <form id="addFarmerProductForm" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <input type="text" name="name" placeholder="Product name" required class="inv-field">
+                <input type="text" name="category" placeholder="Category: vegetables, fruits, grains" required class="inv-field">
+                <input type="text" name="unit" placeholder="Unit: kg, bunch, bag" value="kg" class="inv-field">
+                <input type="number" step="0.01" name="price" placeholder="Price" required class="inv-field">
+                <input type="number" step="0.01" name="quantity" placeholder="Available stock" required class="inv-field">
+                <input type="url" name="image_url" placeholder="Image URL" class="inv-field">
+                <textarea name="description" placeholder="Product details" rows="3" class="inv-field md:col-span-2 xl:col-span-3"></textarea>
+                <button type="submit" class="rounded-full bg-gradient-to-r from-emerald-500 to-green-600 px-5 py-3 text-sm font-bold text-white md:col-span-2 xl:col-span-3">
+                    Add Product
+                </button>
+            </form>
         </div>
     </div>
 </div>
 
+<div id="toastStack" class="toast-stack"></div>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
+const tabMyProducts = document.getElementById('tabMyProducts');
+const tabAddProduct = document.getElementById('tabAddProduct');
+const myProductsSection = document.getElementById('myProductsSection');
+const addProductSection = document.getElementById('addProductSection');
+const toastStack = document.getElementById('toastStack');
+
+function showToast(message, kind = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${kind}`;
+    toast.innerHTML = `<div class="text-sm font-semibold">${message}</div>`;
+    toastStack.appendChild(toast);
+    window.setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        window.setTimeout(() => toast.remove(), 180);
+    }, 2600);
+}
+
+function setTab(tabName) {
+    const myActive = tabName === 'my';
+    tabMyProducts.classList.toggle('active', myActive);
+    tabAddProduct.classList.toggle('active', !myActive);
+    myProductsSection.classList.toggle('hidden', !myActive);
+    addProductSection.classList.toggle('hidden', myActive);
+}
+
+function toggleEdit(productId) {
+    const panel = document.getElementById(`edit-${productId}`);
+    if (panel) {
+        panel.classList.toggle('open');
+    }
+}
+
+tabMyProducts.addEventListener('click', () => setTab('my'));
+tabAddProduct.addEventListener('click', () => setTab('add'));
+
+function notifyDashboard(productName) {
+    const payload = {
+        type: 'farmer-product-added',
+        message: `${productName} added successfully`,
+        createdAt: Date.now()
+    };
+
+    try {
+        localStorage.setItem('agri_fm_notify', JSON.stringify(payload));
+        window.setTimeout(() => {
+            try {
+                const current = JSON.parse(localStorage.getItem('agri_fm_notify') || 'null');
+                if (current && current.createdAt === payload.createdAt) {
+                    localStorage.removeItem('agri_fm_notify');
+                }
+            } catch (error) {}
+        }, 10000);
+    } catch (error) {}
+
+    if ('BroadcastChannel' in window) {
+        const channel = new BroadcastChannel('agriconnect-farmer');
+        channel.postMessage(payload);
+        channel.close();
+    }
+}
+
 document.getElementById('addFarmerProductForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
     const payload = Object.fromEntries(formData);
+    const submitButton = event.target.querySelector('button[type="submit"]');
 
-    const response = await fetch('/farmer/add-product', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    const result = await response.json();
-    if (result.success) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Adding...';
+
+    try {
+        const response = await fetch('/farmer/add-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Could not add product');
+        }
+
+        notifyDashboard(payload.name || 'Product');
+        showToast('Product added successfully', 'success');
         window.location.reload();
-    } else {
-        alert(result.error || 'Could not add product');
+    } catch (error) {
+        showToast(error.message || 'Could not add product', 'error');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Add Product';
     }
 });
 
@@ -110,14 +378,14 @@ document.querySelectorAll('.edit-product-form').forEach((form) => {
 
         const response = await fetch(`/farmer/update-product/${productId}`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
         const result = await response.json();
         if (result.success) {
             window.location.reload();
         } else {
-            alert(result.error || 'Could not update product');
+            showToast(result.error || 'Could not update product', 'error');
         }
     });
 });
@@ -130,8 +398,34 @@ async function toggleProduct(productId) {
     if (result.success) {
         window.location.reload();
     } else {
-        alert(result.error || 'Could not update product visibility');
+        showToast(result.error || 'Could not update product visibility', 'error');
     }
 }
+
+function listenForDashboardNotifications() {
+    if ('BroadcastChannel' in window) {
+        const channel = new BroadcastChannel('agriconnect-farmer');
+        channel.addEventListener('message', (event) => {
+            const data = event.data || {};
+            if (data.type === 'farmer-product-added') {
+                showToast(data.message || 'Product added successfully', 'success');
+            }
+        });
+    }
+
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'agri_fm_notify' && event.newValue) {
+            try {
+                const data = JSON.parse(event.newValue);
+                if (data.type === 'farmer-product-added') {
+                    showToast(data.message || 'Product added successfully', 'success');
+                }
+            } catch (error) {}
+        }
+    });
+}
+
+listenForDashboardNotifications();
+setTab('my');
 </script>
 {% endblock %}

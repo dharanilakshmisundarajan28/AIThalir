@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Fertilizer Store - AgriConnect{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-900 to-green-700 px-5 py-4 text-white shadow-xl">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-[10px] font-semibold uppercase tracking-[0.35em] text-emerald-200">Fertilizers</p>
+        <h1 class="mt-1 text-2xl font-black tracking-tight md:text-[2rem]">Fertilizer Marketplace</h1>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <a href="{{ url_for('marketplace.view_cart') }}" class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur hover:bg-white/15">
+          <i class="fas fa-cart-shopping mr-2"></i>
+          Cart ({{ cart_count or 0 }})
+        </a>
+        <a href="{{ url_for('marketplace.products') }}?type=fertilizer" class="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600">
+          <i class="fas fa-bag-shopping mr-2"></i>
+          Open Shop
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-3xl bg-white p-4 shadow-lg">
+    <form method="get" class="grid gap-3 md:grid-cols-3">
+      <div>
+        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Category</label>
+        <select name="category" class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none">
+          <option value="all">All</option>
+          {% for category in categories or [] %}
+          <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Search</label>
+        <div class="flex gap-2">
+          <input type="text" name="search" value="{{ search }}" placeholder="Search fertilizers..." class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none">
+          <button type="submit" class="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    {% if products %}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for product in products %}
+      <div class="overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-slate-200/70 transition hover:-translate-y-1 hover:shadow-xl">
+        <div class="h-40 bg-slate-100">
+          <img
+            src="{{ product.image_url or 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900' }}"
+            alt="{{ product.name }}"
+            class="h-full w-full object-cover"
+          >
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 md:text-base">{{ product.name }}</h3>
+              <p class="mt-1 line-clamp-2 text-xs text-slate-500 md:text-sm">
+                {{ product.description[:110] if product.description else 'No description available.' }}
+              </p>
+            </div>
+            <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Fertilizer</span>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between">
+            <div>
+              <div class="text-lg font-black text-emerald-700">Rs. {{ "%.2f"|format(product.price) }}</div>
+              <div class="text-[11px] text-slate-500">per {{ product.unit or 'unit' }}</div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex gap-2">
+            <button type="button" onclick="addToCart({{ product.id }})" class="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
+              <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+            </button>
+            <a href="{{ url_for('marketplace.view_cart') }}" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+              Cart
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="rounded-3xl bg-white p-10 text-center shadow-lg">
+      <i class="fas fa-flask text-5xl text-slate-300"></i>
+      <h3 class="mt-4 text-lg font-bold text-slate-700">No fertilizers available</h3>
+      <p class="mt-1 text-sm text-slate-500">Supplier-added fertilizer products will appear here.</p>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<script>
+async function addToCart(productId) {
+  try {
+    const response = await fetch(`/marketplace/add-to-cart/${productId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 1 })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      const note = document.createElement('div');
+      note.className = 'fixed right-4 top-4 z-50 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-xl';
+      note.innerHTML = '<i class="fas fa-circle-check mr-2"></i>Added to cart';
+      document.body.appendChild(note);
+      setTimeout(() => note.remove(), 1800);
+    } else {
+      alert(result.error || 'Could not add to cart');
+    }
+  } catch (error) {
+    alert('Could not add to cart');
+  }
+}
+</script>
+{% endblock %}

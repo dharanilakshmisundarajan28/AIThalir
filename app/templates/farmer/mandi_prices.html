@@ -3,101 +3,171 @@
 {% block title %}Mandi Prices - Real-time Market Rates{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-500 p-6">
-                <h1 class="text-2xl font-bold text-white">📊 Mandi Price Dashboard</h1>
-                <p class="text-blue-100 mt-1">Real-time wholesale market prices across India</p>
+<div class="space-y-6">
+    <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-900 to-green-600 p-6 text-white shadow-xl">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-200">Market Watch</p>
+                <h1 class="mt-2 text-3xl font-bold">Mandi Price Dashboard</h1>
+                <p class="mt-2 max-w-3xl text-white/80">
+                    Live wholesale market prices sourced from AGMARKNET through data.gov.in.
+                </p>
+                <div class="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur">
+                    Source: {{ source_name or 'Live OGD / AGMARKNET' }}
+                </div>
             </div>
-            
-            <div class="p-6">
-                <!-- Search and Filter -->
-                <div class="mb-6 flex flex-wrap gap-4">
-                    <input type="text" id="searchCommodity" placeholder="Search commodity..." 
-                           class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <select id="filterState" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="all">All States</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Punjab">Punjab</option>
-                        <option value="Haryana">Haryana</option>
-                        <option value="Uttar Pradesh">Uttar Pradesh</option>
-                        <option value="Gujarat">Gujarat</option>
-                    </select>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+                    <p class="text-xs uppercase tracking-[0.25em] text-white/60">Records</p>
+                    <p class="mt-1 text-2xl font-bold">{{ total_prices or 0 }}</p>
                 </div>
-                
-                <!-- Price Cards -->
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="priceCards">
-                    {% for commodity, prices in price_data.items() %}
-                    <div class="price-card bg-white border rounded-xl p-4 hover:shadow-lg transition" 
-                         data-commodity="{{ commodity.lower() }}" data-state="{{ prices[0].state }}">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-bold text-lg text-gray-800">{{ commodity }}</h3>
-                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">{{ prices[0].state }}</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Market:</span>
-                                <span class="font-semibold">{{ prices[0].market }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Min Price:</span>
-                                <span class="text-green-600 font-semibold">₹{{ "%.2f"|format(prices[0].min_price) }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Max Price:</span>
-                                <span class="text-red-600 font-semibold">₹{{ "%.2f"|format(prices[0].max_price) }}</span>
-                            </div>
-                            <div class="flex justify-between border-t pt-2 mt-2">
-                                <span class="text-gray-600 font-bold">Modal Price:</span>
-                                <span class="text-blue-600 font-bold text-lg">₹{{ "%.2f"|format(prices[0].modal_price) }}</span>
-                            </div>
-                        </div>
-                        <div class="mt-3 text-xs text-gray-400">
-                            Updated: {{ prices[0].updated_at.strftime('%d %b, %Y') }}
-                        </div>
-                    </div>
-                    {% endfor %}
+                <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+                    <p class="text-xs uppercase tracking-[0.25em] text-white/60">States</p>
+                    <p class="mt-1 text-2xl font-bold">{{ states|length if states else 0 }}</p>
                 </div>
-                
-                {% if not price_data %}
-                <div class="text-center py-12">
-                    <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500">No price data available. Please check back later.</p>
+                <div class="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+                    <p class="text-xs uppercase tracking-[0.25em] text-white/60">Commodities</p>
+                    <p class="mt-1 text-2xl font-bold">{{ commodities|length if commodities else 0 }}</p>
                 </div>
-                {% endif %}
             </div>
         </div>
-    </div>
+    </section>
+
+    {% if mandi_error %}
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 shadow-sm">
+            {{ mandi_error }}
+        </div>
+    {% endif %}
+
+    <section class="rounded-3xl bg-white p-5 shadow-lg">
+        <form method="get" class="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            <input type="hidden" name="page" value="1">
+            <div>
+                <label for="filterState" class="mb-2 block text-sm font-semibold text-slate-700">State</label>
+                <select
+                    id="filterState"
+                    name="state"
+                    onchange="this.form.submit()"
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                    <option value="">Choose state</option>
+                    {% for state in state_options or [] %}
+                        <option value="{{ state }}" {% if selected_state == state %}selected{% endif %}>{{ state }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filterCommodity" class="mb-2 block text-sm font-semibold text-slate-700">Commodity</label>
+                <select
+                    id="filterCommodity"
+                    name="commodity"
+                    {% if not dropdown_options.commodities %}disabled{% endif %}
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                    <option value="">Choose commodity</option>
+                    {% for commodity in dropdown_options.commodities or [] %}
+                        <option value="{{ commodity }}" {% if selected_commodity == commodity %}selected{% endif %}>{{ commodity }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filterDistrict" class="mb-2 block text-sm font-semibold text-slate-700">District</label>
+                <select
+                    id="filterDistrict"
+                    name="district"
+                    {% if not dropdown_options.districts %}disabled{% endif %}
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                    <option value="">Choose district</option>
+                    {% for district in dropdown_options.districts or [] %}
+                        <option value="{{ district }}" {% if selected_district == district %}selected{% endif %}>{{ district }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="lg:col-span-2 xl:col-span-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm text-slate-500">
+                    Select a state first, then choose a commodity or district to load live mandi prices from the API.
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
+                        Show Prices
+                    </button>
+                    <a href="{{ url_for('farmer.mandi_prices') }}" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </section>
+
+    <section class="overflow-hidden rounded-3xl bg-white shadow-lg">
+        <div class="border-b border-slate-200 px-5 py-4">
+            <h2 class="text-lg font-bold text-slate-900">Live Mandi Prices</h2>
+            <p class="text-sm text-slate-500">Showing the latest data returned from the mandi API.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.25em] text-slate-500">
+                    <tr>
+                        <th class="px-4 py-3">Variety</th>
+                        <th class="px-4 py-3">Market</th>
+                        <th class="px-4 py-3">Min</th>
+                        <th class="px-4 py-3">Max</th>
+                        <th class="px-4 py-3">Modal</th>
+                        <th class="px-4 py-3">Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="priceRows" class="divide-y divide-slate-100 bg-white">
+                    {% for price in price_rows %}
+                        <tr
+                            class="price-row hover:bg-slate-50"
+                            data-market="{{ price.market|lower }}"
+                        >
+                            <td class="px-4 py-4 text-slate-600">{{ price.variety or 'N/A' }}</td>
+                            <td class="px-4 py-4 text-slate-700">{{ price.market }}</td>
+                            <td class="px-4 py-4 font-semibold text-emerald-700">Rs. {{ "%.2f"|format(price.min_price or 0) }}</td>
+                            <td class="px-4 py-4 font-semibold text-rose-700">Rs. {{ "%.2f"|format(price.max_price or 0) }}</td>
+                            <td class="px-4 py-4 font-bold text-blue-700">Rs. {{ "%.2f"|format(price.modal_price or 0) }}</td>
+                            <td class="px-4 py-4 text-slate-500">{{ price.updated_at.strftime('%d %b %Y') }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-12 text-center text-slate-500">
+                                No mandi price data available right now.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white px-5 py-4 shadow-lg">
+        <div class="text-sm text-slate-600">
+            Page <span class="font-semibold text-slate-900">{{ page or 1 }}</span>
+            showing <span class="font-semibold text-slate-900">{{ price_rows|length }}</span> records
+        </div>
+        <div class="flex items-center gap-2">
+            {% if has_prev %}
+                <a
+                    href="{{ url_for('farmer.mandi_prices', page=prev_page, state=request.args.get('state'), commodity=request.args.get('commodity'), district=request.args.get('district')) }}"
+                    class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+                >
+                    Previous
+                </a>
+            {% endif %}
+            {% if has_next %}
+                <a
+                    href="{{ url_for('farmer.mandi_prices', page=next_page, state=request.args.get('state'), commodity=request.args.get('commodity'), district=request.args.get('district')) }}"
+                    class="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                    Next
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
 </div>
-
-<script>
-// Search and filter functionality
-const searchInput = document.getElementById('searchCommodity');
-const stateFilter = document.getElementById('filterState');
-
-function filterPrices() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedState = stateFilter.value;
-    
-    const cards = document.querySelectorAll('.price-card');
-    
-    cards.forEach(card => {
-        const commodity = card.dataset.commodity;
-        const state = card.dataset.state;
-        
-        const matchesSearch = commodity.includes(searchTerm);
-        const matchesState = selectedState === 'all' || state === selectedState;
-        
-        if (matchesSearch && matchesState) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-searchInput.addEventListener('input', filterPrices);
-stateFilter.addEventListener('change', filterPrices);
-</script>
 {% endblock %}
+
+{% block extra_scripts %}{% endblock %}

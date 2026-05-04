@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Orders - AgriConnect{% endblock %}
+
+{% block extra_head %}
+<style>
+    .orders-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .orders-card {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 24px;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-4">
+    <div class="orders-shell">
+        <div class="mb-5">
+            <div class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Orders</div>
+            <h1 class="mt-1 text-2xl md:text-3xl font-black text-slate-900">Supplier Orders</h1>
+            <p class="mt-1 text-sm text-slate-500">Track and update order status for your fertilizer products.</p>
+        </div>
+
+        <div class="space-y-4">
+            {% for row in orders %}
+            <div class="orders-card p-5 md:p-6">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div class="min-w-0">
+                        <div class="text-2xl font-black text-slate-900">{{ row.product_name }}</div>
+                        <div class="mt-1 text-sm text-slate-500">
+                            Order {{ row.order_number }} | {{ row.order_date.strftime('%d %b %Y, %I:%M %p') if row.order_date else '-' }}
+                        </div>
+                        <div class="mt-3 text-sm text-slate-600">
+                            Buyer: {{ row.buyer_name }} | Address: {{ row.shipping_address or 'Not provided' }}
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="text-sm text-slate-500">Quantity</div>
+                        <div class="text-xl font-black text-slate-900">{{ row.quantity }} kg</div>
+                        <div class="mt-4 text-2xl font-black text-emerald-700">₹{{ "%.2f"|format(row.line_total) }}</div>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid gap-3 md:grid-cols-3">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-sm text-slate-500">Product Details</div>
+                        <div class="mt-2 text-lg font-semibold text-slate-900 leading-snug">
+                            {{ row.product_description or 'No product details provided.' }}
+                        </div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-sm text-slate-500">Current Status</div>
+                        <div class="mt-2 text-lg font-semibold text-blue-600">{{ row.status|title }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-sm text-slate-500 mb-3">Update Status</div>
+                        <div class="flex flex-col gap-3 sm:flex-row">
+                            <select id="status-{{ row.order_id }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500">
+                                {% set current = row.status|lower %}
+                                <option value="pending" {% if current == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="confirmed" {% if current == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                <option value="packed" {% if current == 'packed' %}selected{% endif %}>Packed</option>
+                                <option value="shipped" {% if current == 'shipped' %}selected{% endif %}>Shipped</option>
+                                <option value="delivered" {% if current == 'delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="cancelled" {% if current == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                            <button type="button" onclick="saveOrderStatus({{ row.order_id }})" class="rounded-2xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-indigo-700">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="orders-card px-5 py-10 text-center text-sm text-slate-400">
+                No orders yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function saveOrderStatus(orderId) {
+    const select = document.getElementById(`status-${orderId}`);
+    const response = await fetch(`/supplier/update-order-status/${orderId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: select.value })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && result.success) {
+        window.location.reload();
+    } else {
+        alert(result.error || 'Could not update order status');
+    }
+}
+</script>
+{% endblock %}

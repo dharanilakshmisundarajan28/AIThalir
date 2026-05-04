@@ -12,59 +12,223 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-gradient-to-br from-lime-50 via-white to-emerald-100 text-gray-900">
-    <nav class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-3">
-                <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
-                    <i class="fas fa-seedling text-green-600 text-2xl"></i>
-                    <span class="text-xl font-bold text-gray-800">AgriConnect</span>
-                </a>
+    {% set is_farmer = current_user.is_authenticated and current_user.role.value == 'farmer' %}
+    {% set is_supplier = current_user.is_authenticated and current_user.role.value == 'supplier' %}
+    {% if is_farmer %}
+        <div class="min-h-screen bg-slate-100">
+            <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-slate-950 text-white shadow-2xl lg:flex">
+                <div class="border-b border-white/10 px-5 py-5">
+                    <a href="{{ url_for('farmer.dashboard') }}" class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-500/20 text-green-300">
+                            <i class="fas fa-seedling text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-base font-bold">AgriConnect</p>
+                            <p class="text-[11px] uppercase tracking-[0.3em] text-slate-400">Farmer Panel</p>
+                        </div>
+                    </a>
+                </div>
 
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="{{ url_for('index') }}" class="text-gray-700 hover:text-green-600 transition">Home</a>
-                    {% if current_user.is_authenticated %}
-                        {% if current_user.role.value == 'farmer' %}
-                            <a href="{{ url_for('farmer.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
-                            <a href="{{ url_for('farmer.manage_products') }}" class="text-gray-700 hover:text-green-600">My Products</a>
-                            <a href="{{ url_for('farmer.view_orders') }}" class="text-gray-700 hover:text-green-600">My Orders</a>
-                            <a href="{{ url_for('farmer.crop_recommendation') }}" class="text-gray-700 hover:text-green-600">Crop Advisor</a>
-                            <a href="{{ url_for('farmer.mandi_prices') }}" class="text-gray-700 hover:text-green-600">Mandi Prices</a>
-                        {% elif current_user.role.value == 'consumer' %}
-                            <a href="{{ url_for('consumer.dashboard') }}" class="text-gray-700 hover:text-green-600">Shop</a>
-                            <a href="{{ url_for('consumer.my_orders') }}" class="text-gray-700 hover:text-green-600">My Orders</a>
-                            <a href="{{ url_for('marketplace.view_cart') }}" class="text-gray-700 hover:text-green-600">My Cart</a>
-                        {% elif current_user.role.value == 'supplier' %}
-                            <a href="{{ url_for('supplier.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
-                            <a href="{{ url_for('supplier.manage_products') }}" class="text-gray-700 hover:text-green-600">Manage Products</a>
-                        {% elif current_user.role.value == 'admin' %}
-                            <a href="{{ url_for('admin.dashboard') }}" class="text-gray-700 hover:text-green-600">Admin Panel</a>
-                        {% endif %}
-                        <a href="{{ url_for('schemes.list_schemes') }}" class="text-gray-700 hover:text-green-600">Govt Schemes</a>
-                        <a href="{{ url_for('marketplace.products') }}" class="text-gray-700 hover:text-green-600">Marketplace</a>
-                        <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-red-600">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('auth.auth_home') }}" class="text-gray-700 hover:text-green-600">Login Portal</a>
+                <nav class="flex-1 space-y-1.5 px-3 py-4">
+                    <a href="{{ url_for('farmer.dashboard') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-chart-simple w-5 text-green-300"></i>
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('farmer.manage_products') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-boxes-stacked w-5 text-green-300"></i>
+                        Inventory
+                    </a>
+                    <a href="{{ url_for('farmer.view_orders') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-truck-fast w-5 text-green-300"></i>
+                        My Orders
+                    </a>
+                    <a href="{{ url_for('farmer.crop_recommendation') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-microchip w-5 text-green-300"></i>
+                        Crop Advisor
+                    </a>
+                    <a href="{{ url_for('farmer.mandi_prices') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-chart-line w-5 text-green-300"></i>
+                        Mandi Prices
+                    </a>
+                    <a href="{{ url_for('farmer.fertilizers') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-flask w-5 text-green-300"></i>
+                        Fertilizer
+                    </a>
+                    <a href="{{ url_for('schemes.list_schemes') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-hand-holding-heart w-5 text-green-300"></i>
+                        Govt Schemes
+                    </a>
+                </nav>
+
+                <div class="border-t border-white/10 px-3 py-4">
+                    <details class="relative">
+                        <summary class="list-none cursor-pointer">
+                            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition hover:scale-105">
+                                <i class="fas fa-user text-lg"></i>
+                            </div>
+                        </summary>
+                        <div class="absolute bottom-16 left-0 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                            <a href="{{ url_for('farmer.settings') }}" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                <i class="fas fa-gear mr-2 text-slate-500"></i> Settings
+                            </a>
+                            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-right-from-bracket mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </details>
+                </div>
+            </aside>
+
+            <div class="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <section class="container mx-auto px-4 pt-6">
+                            {% for category, message in messages %}
+                                <div class="mb-3 rounded-xl border px-4 py-3 shadow-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-green-200 bg-green-50 text-green-700{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </section>
                     {% endif %}
+                {% endwith %}
+                <main class="min-w-0 flex-1 px-4 py-6 lg:px-6 xl:px-8">
+    {% elif is_supplier %}
+        <div class="min-h-screen bg-slate-100">
+            <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-slate-950 text-white shadow-2xl lg:flex">
+                <div class="border-b border-white/10 px-5 py-5">
+                    <a href="{{ url_for('supplier.dashboard') }}" class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-500/20 text-green-300">
+                            <i class="fas fa-seedling text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-base font-bold">AgriConnect</p>
+                            <p class="text-[11px] uppercase tracking-[0.3em] text-slate-400">Supplier Panel</p>
+                        </div>
+                    </a>
+                </div>
+
+                <nav class="flex-1 space-y-1.5 px-3 py-4">
+                    <a href="{{ url_for('supplier.dashboard') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-chart-simple w-5 text-green-300"></i>
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('supplier.manage_products') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-boxes-stacked w-5 text-green-300"></i>
+                        Manage Products
+                    </a>
+                    <a href="{{ url_for('supplier.view_orders') }}" class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-white/10">
+                        <i class="fas fa-truck-fast w-5 text-green-300"></i>
+                        Orders
+                    </a>
+                </nav>
+
+                <div class="border-t border-white/10 px-3 py-4">
+                    <details class="relative">
+                        <summary class="list-none cursor-pointer">
+                            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition hover:scale-105">
+                                <i class="fas fa-user text-lg"></i>
+                            </div>
+                        </summary>
+                        <div class="absolute bottom-16 left-0 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-right-from-bracket mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </details>
+                </div>
+            </aside>
+
+            <div class="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <section class="container mx-auto px-4 pt-6">
+                            {% for category, message in messages %}
+                                <div class="mb-3 rounded-xl border px-4 py-3 shadow-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-green-200 bg-green-50 text-green-700{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </section>
+                    {% endif %}
+                {% endwith %}
+                <main class="min-w-0 flex-1 px-4 py-6 lg:px-6 xl:px-8">
+    {% else %}
+        <nav class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center py-3">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                        <i class="fas fa-seedling text-green-600 text-2xl"></i>
+                        <span class="text-xl font-bold text-gray-800">AgriConnect</span>
+                    </a>
+
+                    <div class="hidden md:flex items-center space-x-6">
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.role.value == 'farmer' %}
+                                <a href="{{ url_for('farmer.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
+                                <a href="{{ url_for('farmer.manage_products') }}" class="text-gray-700 hover:text-green-600">Inventory</a>
+                                <a href="{{ url_for('farmer.view_orders') }}" class="text-gray-700 hover:text-green-600">My Orders</a>
+                                <a href="{{ url_for('farmer.crop_recommendation') }}" class="text-gray-700 hover:text-green-600">Crop Advisor</a>
+                                <a href="{{ url_for('farmer.mandi_prices') }}" class="text-gray-700 hover:text-green-600">Mandi Prices</a>
+                                <a href="{{ url_for('farmer.fertilizers') }}" class="text-gray-700 hover:text-green-600">Fertilizer</a>
+                            {% elif current_user.role.value == 'consumer' %}
+                                <details class="relative">
+                                    <summary class="list-none cursor-pointer">
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition hover:scale-105">
+                                            <i class="fas fa-user text-lg"></i>
+                                        </div>
+                                    </summary>
+                                    <div class="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                                        <a href="{{ url_for('consumer.settings') }}" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                            <i class="fas fa-gear mr-2 text-slate-500"></i> Settings
+                                        </a>
+                                        <a href="{{ url_for('consumer.my_orders') }}" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                                            <i class="fas fa-receipt mr-2 text-slate-500"></i> My Orders
+                                        </a>
+                                        <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                                            <i class="fas fa-right-from-bracket mr-2"></i> Logout
+                                        </a>
+                                    </div>
+                                </details>
+                            {% elif current_user.role.value == 'supplier' %}
+                                <a href="{{ url_for('supplier.dashboard') }}" class="text-gray-700 hover:text-green-600">Dashboard</a>
+                                <a href="{{ url_for('supplier.manage_products') }}" class="text-gray-700 hover:text-green-600">Manage Products</a>
+                            {% elif current_user.role.value == 'admin' %}
+                                <a href="{{ url_for('admin.dashboard') }}" class="text-gray-700 hover:text-green-600">Admin Panel</a>
+                            {% endif %}
+                            {% if current_user.role.value != 'consumer' %}
+                                <a href="{{ url_for('schemes.list_schemes') }}" class="text-gray-700 hover:text-green-600">Govt Schemes</a>
+                                {% if current_user.role.value != 'farmer' %}
+                                    <a href="{{ url_for('marketplace.products') }}" class="text-gray-700 hover:text-green-600">Marketplace</a>
+                                {% endif %}
+                                <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-red-600">Logout</a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ url_for('index') }}" class="text-gray-700 hover:text-green-600 transition">Home</a>
+                            <a href="{{ url_for('auth.auth_home') }}" class="text-gray-700 hover:text-green-600">Login Portal</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <section class="container mx-auto px-4 pt-6">
-                {% for category, message in messages %}
-                    <div class="mb-3 rounded-xl border px-4 py-3 shadow-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-green-200 bg-green-50 text-green-700{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </section>
-        {% endif %}
-    {% endwith %}
-
-    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="container mx-auto px-4 pt-6">
+                    {% for category, message in messages %}
+                        <div class="mb-3 rounded-xl border px-4 py-3 shadow-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-green-200 bg-green-50 text-green-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+                {% endwith %}
+        <main>
+    {% endif %}
         {% block content %}{% endblock %}
     </main>
+    {% if is_farmer or is_supplier %}
+            </div>
+        </div>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_scripts %}{% endblock %}

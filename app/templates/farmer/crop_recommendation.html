@@ -1,178 +1,1082 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}AI Crop Recommendation - Farmer Portal{% endblock %}
+{% block title %}Crop Recommendation - AgriConnect{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page-bg: #f3f6f2;
+    --panel: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --green: #1f7a32;
+    --green-2: #0f8d68;
+    --border: rgba(15, 23, 42, 0.08);
+    --shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  }
+
+  body {
+    background: var(--page-bg);
+    font-family: Inter, sans-serif;
+  }
+
+  .crop-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .section-title {
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .input-field {
+    width: 100%;
+    border: 1px solid #d8e1dd;
+    border-radius: 14px;
+    padding: 0.86rem 0.95rem;
+    font-size: 0.95rem;
+    outline: none;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    background: #fff;
+  }
+
+  .input-field:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #1f7a32 0%, #0f8d68 100%);
+    color: #fff;
+    border: 0;
+    border-radius: 16px;
+    padding: 0.95rem 1.15rem;
+    font-weight: 800;
+    box-shadow: 0 12px 24px rgba(31, 122, 50, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(31, 122, 50, 0.26);
+  }
+
+  .btn-ghost {
+    background: #20293d;
+    color: #fff;
+    border: 0;
+    border-radius: 9999px;
+    padding: 0.9rem 1.35rem;
+    font-weight: 800;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .btn-ghost:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+  }
+
+  .btn-soft {
+    background: #dfe8f3;
+    color: #111827;
+    border: 0;
+    border-radius: 16px;
+    padding: 0.95rem 1.25rem;
+    font-weight: 800;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .btn-soft:hover {
+    transform: translateY(-1px);
+  }
+
+  .page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .page-head h2 {
+    margin: 0;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .stat-card,
+  .roadmap-card,
+  .info-card {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  }
+
+  .hero-image {
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+    background: #0f172a;
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .hero-image .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.62) 100%);
+  }
+
+  .hero-image .caption {
+    position: absolute;
+    left: 1.2rem;
+    bottom: 1rem;
+    color: #fff;
+    font-size: 1.3rem;
+    line-height: 1.08;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  }
+
+  .quick-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0.1rem;
+  }
+
+  .quick-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #edf4e9;
+    color: #1a5d1f;
+    flex: 0 0 auto;
+  }
+
+  .quick-label {
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #718096;
+    margin-bottom: 0.15rem;
+  }
+
+  .quick-value {
+    font-size: 0.98rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+
+  .summary-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #fff;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    color: #1f2937;
+    line-height: 1.62;
+    font-size: 0.93rem;
+  }
+
+  .summary-card strong {
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+
+  .roadmap-step {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #2e7d32;
+    color: #fff;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    box-shadow: 0 10px 18px rgba(46, 125, 50, 0.18);
+  }
+
+  .roadmap-step.soft {
+    background: #c2d8c1;
+    color: #194d1a;
+    box-shadow: none;
+  }
+
+  .roadmap-card {
+    text-align: center;
+    padding: 1rem 0.9rem;
+  }
+
+  .roadmap-card h4 {
+    margin: 0 0 0.55rem;
+    font-size: 0.96rem;
+    font-weight: 900;
+    color: #111827;
+  }
+
+  .roadmap-card p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #475569;
+  }
+
+  .roadmap-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: #e8f0e5;
+    color: #1f5f20;
+    padding: 0.28rem 0.7rem;
+    margin-top: 1rem;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  .info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.85rem 1rem;
+    background: #1d6e25;
+    color: #fff;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .info-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .info-body {
+    padding: 0.95rem 1rem 1rem;
+  }
+
+  .finance-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .finance-row:last-child {
+    border-bottom: 0;
+  }
+
+  .finance-row span:first-child,
+  .tech-label {
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .finance-row span:last-child,
+  .tech-value {
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 900;
+  }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .tech-chip {
+    border-radius: 12px;
+    background: #f6f8fb;
+    padding: 0.95rem 0.8rem;
+    text-align: center;
+  }
+
+  .tech-chip .small {
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+  }
+
+  .subtle {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .toast-stack {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+
+  .toast {
+    pointer-events: auto;
+    min-width: 260px;
+    max-width: 360px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1f7a32 0%, #0f8d68 100%);
+    color: #fff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.2);
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 0.9rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.95rem;
+  }
+
+  .result-head h2 {
+    margin: 0;
+    font-size: clamp(1.55rem, 2.8vw, 2.5rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    font-weight: 900;
+    color: #111827;
+  }
+
+  .result-subtle {
+    margin-top: 0.45rem;
+    font-size: 0.88rem;
+    color: #0f766e;
+    font-weight: 600;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: start;
+  }
+
+  .stack-gap {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 0.9rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .muted-note {
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  @media (max-width: 1024px) {
+    .result-grid,
+    .roadmap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-image {
+      min-height: 240px;
+    }
+
+    .hero-image .caption {
+      font-size: 1.05rem;
+    }
+
+    .page-head,
+    .result-head {
+      flex-direction: column;
+    }
+
+    .result-actions {
+      justify-content: flex-start;
+    }
+
+    .tech-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4 max-w-4xl">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="bg-gradient-to-r from-green-600 to-green-500 p-6">
-                <h1 class="text-2xl font-bold text-white">🤖 AI Crop Recommendation System</h1>
-                <p class="text-green-100 mt-1">Get smart crop suggestions based on your soil parameters and weather conditions</p>
+<div class="px-4 py-4 md:py-6">
+  <div class="crop-shell">
+    <div class="panel overflow-hidden">
+      <div id="formView" class="px-5 pt-5 md:px-8 md:pt-6">
+        <div class="section-title text-emerald-700">Crop inputs</div>
+      </div>
+
+      <div class="p-5 md:p-8">
+        <div id="formViewBody">
+          <form id="recommendationForm" class="space-y-5">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Nitrogen (N) mg/kg</label>
+                <input type="number" step="1" min="0" max="140" name="nitrogen" placeholder="0 - 140" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Phosphorus (P) mg/kg</label>
+                <input type="number" step="1" min="5" max="145" name="phosphorus" placeholder="5 - 145" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Potassium (K) mg/kg</label>
+                <input type="number" step="1" min="5" max="205" name="potassium" placeholder="5 - 205" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Soil pH Level</label>
+                <input type="number" step="0.01" min="3.50" max="9.94" name="ph" placeholder="3.50 - 9.94" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Temperature (C)</label>
+                <input type="number" step="0.01" min="8.83" max="43.68" name="temperature" placeholder="8.83 - 43.68" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Humidity (%)</label>
+                <input type="number" step="0.01" min="14.26" max="99.98" name="humidity" placeholder="14.26 - 99.98" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Rainfall (mm)</label>
+                <input type="number" step="0.01" min="20.21" max="298.56" name="rainfall" placeholder="20.21 - 298.56" required class="input-field">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Acreage (acres)</label>
+                <input type="number" step="0.1" min="0.1" max="100" name="acreage" placeholder="0.1 - 100" value="1" required class="input-field">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-bold text-slate-700 mb-2">Location (for weather)</label>
+                <input type="text" name="location" id="location" placeholder="City name" class="input-field">
+              </div>
             </div>
-            
-            <div class="p-6">
-                <form id="recommendationForm" class="space-y-6">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">🌱 Nitrogen (N) mg/kg</label>
-                            <input type="number" step="any" name="nitrogen" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <p class="text-xs text-gray-500 mt-1">Ideal range: 50-150 mg/kg</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">🌿 Phosphorus (P) mg/kg</label>
-                            <input type="number" step="any" name="phosphorus" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <p class="text-xs text-gray-500 mt-1">Ideal range: 20-80 mg/kg</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">🍂 Potassium (K) mg/kg</label>
-                            <input type="number" step="any" name="potassium" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <p class="text-xs text-gray-500 mt-1">Ideal range: 30-100 mg/kg</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">🔬 Soil pH Level</label>
-                            <input type="number" step="0.1" name="ph" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <p class="text-xs text-gray-500 mt-1">Ideal range: 5.5-7.5</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">🌡️ Temperature (°C)</label>
-                            <input type="number" step="any" name="temperature" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <button type="button" onclick="getLiveWeather()" class="mt-1 text-sm text-green-600 hover:underline">
-                                <i class="fas fa-cloud-sun"></i> Get Live Weather
-                            </button>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">💧 Humidity (%)</label>
-                            <input type="number" step="any" name="humidity" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">☔ Rainfall (mm)</label>
-                            <input type="number" step="any" name="rainfall" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">📍 Location (for weather)</label>
-                            <input type="text" name="location" id="location" placeholder="City name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                        Get Crop Recommendation
-                    </button>
-                </form>
-                
-                <!-- Results Section -->
-                <div id="results" class="mt-8 hidden">
-                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-400">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">🌾 AI Recommendation Result</h3>
-                        <div id="recommendationResult"></div>
-                    </div>
-                </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button type="button" onclick="getLiveWeather()" class="btn-soft inline-flex items-center justify-center gap-2">
+                <i class="fas fa-cloud-sun"></i>
+                Get Live Weather
+              </button>
+              <button type="submit" class="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2">
+                <i class="fas fa-seedling"></i>
+                Get Crop Recommendation
+              </button>
             </div>
+          </form>
         </div>
+
+        <div id="resultView" class="hidden">
+          <div class="result-head">
+            <div>
+              <div class="section-title text-emerald-700 mb-2">Crop Details</div>
+              <h2 id="resultTitle">Crop Details</h2>
+              <div class="result-subtle" id="resultSubtle">Suitable crop selected for your farm.</div>
+            </div>
+          </div>
+
+          <div id="recommendationResult" class="stack-gap"></div>
+
+          <div class="footer-actions">
+            <button type="button" class="btn-ghost inline-flex items-center gap-2" onclick="showFormView()">
+              <i class="fas fa-arrow-left"></i>
+              Back
+            </button>
+            <button type="button" class="btn-primary inline-flex items-center gap-2" onclick="createPlan()">
+              <i class="fas fa-clipboard-list"></i>
+              Go with this plan
+            </button>
+          </div>
+
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
+<div id="toastStack" class="toast-stack"></div>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-async function getLiveWeather() {
-    const location = document.getElementById('location').value;
-    if (!location) {
-        alert('Please enter a location first');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/farmer/api/weather?location=${encodeURIComponent(location)}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            document.querySelector('input[name="temperature"]').value = data.temperature;
-            document.querySelector('input[name="humidity"]').value = data.humidity;
-            alert('Weather data loaded successfully!');
-        } else {
-            alert('Could not fetch weather data');
-        }
-    } catch (error) {
-        alert('Error fetching weather data');
-    }
+const cropImages = {
+  rice: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVSMd1pA6bq6bSq7y6GdYKYAm7oRv189LQVw&s'],
+  maize: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPjhs3S69gOnmy79_LQ8FOZgcZ0YT02I6nkg&s'],
+  wheat: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFc2D19xDDFx-1jTgWY4nm0h-mlhqWXJqcpw&s'],
+  cotton: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwAcCalzRLZEsaOEJDRkSqrLRkesfCgWplzQ&s'],
+  jute: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrk5PeGVs_h8Q6ARaolPUv5WP--6XbG0fg8Q&s'],
+  sugarcane: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT1Zm66FooN5_LOLbghyaY8elvu4IZ-nL8aOg&s'],
+  turmeric: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9DVO6C5e-yOsqucAqBnXtmRZGBTJ-35fmxQ&s'],
+  banana: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS01GkQrQiZLH77vQZ_vXehLw4V82EF9ZPEbQ&s'],
+  mango: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoyjcrRQrkl4y0Dk7p8izn9asYr85Rd7fF_Q&s'],
+  grapes: ['https://fertri.com/wp-content/uploads/2025/09/%C2%BFComo-plantar-uvas-Recomendaciones-y-consejos-de-cultivo-de-la-vid.jpg'],
+  pomegranate: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZpUxZix4lHQBtDxOOMhJqG7Jgq-KLXu59Q&s'],
+  coconut: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4F3QrhMI7h48RLnDdUKOsPVSJFwDIyshebQ&s'],
+  chickpea: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRY6nrz_Y_F57MLLJSo1-qUvXh3kigPK1WgIw&s'],
+  mothbeans: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBCf-8vblx_n03Nr3DSiasYjt05JpeiG1dgQ&s'],
+  mungbean: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRl-YoD8EzLqGvA9CkaAK4C36R4dj_biu5TNQ&s'],
+  lentil: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7CSPGnpKxe_ue3mddmCDUhBJkuj_DL8nmCA&s'],
+  coffee: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCxcPMc6vrkxR0v7Vu30Mp9s_U6wCrMHKylQ&s'],
+  blackgram: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7CSPGnpKxe_ue3mddmCDUhBJkuj_DL8nmCA&s'],
+  pigeonpeas: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRY6nrz_Y_F57MLLJSo1-qUvXh3kigPK1WgIw&s'],
+  kidneybeans: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBCf-8vblx_n03Nr3DSiasYjt05JpeiG1dgQ&s'],
+  apple: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZpUxZix4lHQBtDxOOMhJqG7Jgq-KLXu59Q&s'],
+  orange: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoyjcrRQrkl4y0Dk7p8izn9asYr85Rd7fF_Q&s'],
+  papaya: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS01GkQrQiZLH77vQZ_vXehLw4V82EF9ZPEbQ&s'],
+  watermelon: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFc2D19xDDFx-1jTgWY4nm0h-mlhqWXJqcpw&s'],
+  muskmelon: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPjhs3S69gOnmy79_LQ8FOZgcZ0YT02I6nkg&s']
+};
+
+let lastRecommendation = null;
+
+function showFormView() {
+  document.getElementById('resultView').classList.add('hidden');
+  document.getElementById('formView').classList.remove('hidden');
+  document.getElementById('formViewBody').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-document.getElementById('recommendationForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData);
-    
-    try {
-        const response = await fetch('/farmer/crop-recommendation', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            const rec = result.recommendation;
-            document.getElementById('recommendationResult').innerHTML = `
-                <div class="text-center">
-                    <div class="text-6xl mb-4">🌾</div>
-                    <h2 class="text-3xl font-bold text-green-700 mb-2">${rec.crop}</h2>
-                    <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
-                        <div class="bg-green-600 h-4 rounded-full" style="width: ${rec.confidence * 100}%"></div>
-                    </div>
-                    <p class="text-sm text-gray-600">Confidence: ${(rec.confidence * 100).toFixed(1)}%</p>
-                    
-                    <div class="mt-6 grid grid-cols-2 gap-4 text-left">
-                        <div class="bg-white rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Nitrogen</p>
-                            <p class="font-semibold">${rec.parameters.nitrogen} mg/kg</p>
-                        </div>
-                        <div class="bg-white rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Phosphorus</p>
-                            <p class="font-semibold">${rec.parameters.phosphorus} mg/kg</p>
-                        </div>
-                        <div class="bg-white rounded-lg p-3">
-                            <p class="text-xs text-gray-500">Potassium</p>
-                            <p class="font-semibold">${rec.parameters.potassium} mg/kg</p>
-                        </div>
-                        <div class="bg-white rounded-lg p-3">
-                            <p class="text-xs text-gray-500">pH Level</p>
-                            <p class="font-semibold">${rec.parameters.ph}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 p-4 bg-green-50 rounded-lg">
-                        <p class="text-sm text-green-800">
-                            <i class="fas fa-lightbulb"></i> Based on your soil parameters and weather conditions, 
-                            <strong>${rec.crop}</strong> is the most suitable crop for your farm.
-                        </p>
-                    </div>
+function showResultView() {
+  document.getElementById('formView').classList.add('hidden');
+  document.getElementById('formViewBody').classList.add('hidden');
+  document.getElementById('resultView').classList.remove('hidden');
+  document.getElementById('resultView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-                    ${result.save_warning ? `
-                    <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                        <p class="text-sm text-amber-800">
-                            <i class="fas fa-circle-exclamation"></i> ${result.save_warning}
-                        </p>
-                    </div>` : ''}
-                </div>
-            `;
-            document.getElementById('results').classList.remove('hidden');
-            
-            // Scroll to results
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-        } else {
-            alert('Error: ' + result.error);
-        }
-    } catch (error) {
-        alert('Error getting recommendation');
+function toast(message) {
+  const stack = document.getElementById('toastStack');
+  const node = document.createElement('div');
+  node.className = 'toast';
+  node.textContent = message;
+  stack.appendChild(node);
+  window.setTimeout(() => {
+    node.style.opacity = '0';
+    node.style.transform = 'translateY(8px)';
+    window.setTimeout(() => node.remove(), 240);
+  }, 2600);
+}
+
+function setupRangeValidation(form) {
+  const fields = Array.from(form.querySelectorAll('input[type="number"]'));
+
+  const validateField = (field) => {
+    if (!field.min && !field.max) return true;
+
+    const value = field.value.trim();
+    if (value === '') {
+      field.setCustomValidity('This field is required.');
+      return false;
     }
+
+    const number = Number(value);
+    const min = field.min !== '' ? Number(field.min) : null;
+    const max = field.max !== '' ? Number(field.max) : null;
+    let valid = true;
+    let message = '';
+
+    if (Number.isNaN(number)) {
+      valid = false;
+      message = 'Enter a valid number.';
+    } else if (min !== null && number < min) {
+      valid = false;
+      message = `Value should be at least ${min}.`;
+    } else if (max !== null && number > max) {
+      valid = false;
+      message = `Value should be at most ${max}.`;
+    }
+
+    field.setCustomValidity(valid ? '' : message);
+    return valid;
+  };
+
+  fields.forEach((field) => {
+    field.addEventListener('input', () => {
+      validateField(field);
+      field.reportValidity();
+    });
+    field.addEventListener('blur', () => {
+      validateField(field);
+    });
+  });
+
+  form.addEventListener('submit', (event) => {
+    let allValid = true;
+    fields.forEach((field) => {
+      if (!validateField(field)) allValid = false;
+    });
+
+    if (!allValid) {
+      event.preventDefault();
+      const firstInvalid = fields.find((field) => !field.checkValidity());
+      if (firstInvalid) {
+        firstInvalid.reportValidity();
+        firstInvalid.focus();
+      }
+    }
+  }, true);
+}
+
+function formatCurrency(value) {
+  return `Rs. ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function pickImage(crop) {
+  const key = (crop || '').toLowerCase().trim();
+  const options = cropImages[key] || cropImages.pomegranate;
+  return options[0];
+}
+
+function cropLabel(crop) {
+  if (!crop) return 'Crop';
+  return crop.charAt(0).toUpperCase() + crop.slice(1);
+}
+
+function cropProfile(crop) {
+  const key = (crop || '').toLowerCase();
+  const profiles = {
+    rice: {
+      duration: '4 - 6 Months',
+      season: 'Kharif',
+      water: 'High',
+      ph: '5.5 - 7.5',
+      temp: '20°C - 35°C',
+      n: '60 kg/ac',
+      p: '25 kg/ac',
+      k: '25 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Prepare field and transplant healthy seedlings.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Maintain water and weed control.', 'Month 1-2'],
+        ['3', 'Tillering', 'Apply nutrients and watch pest pressure.', 'Month 2-4'],
+        ['4', 'Maturity', 'Drain field before harvest.', 'Month 5-6']
+      ]
+    },
+    cotton: {
+      duration: '5 - 6 Months',
+      season: 'Kharif',
+      water: 'Moderate',
+      ph: '6.0 - 8.0',
+      temp: '21°C - 37°C',
+      n: '60 kg/ac',
+      p: '25 kg/ac',
+      k: '25 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Plant treated seeds in prepared soil.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Manage weeds and monitor crop stand.', 'Month 1-2'],
+        ['3', 'Flowering', 'Maintain moisture and pest vigilance.', 'Month 3-4'],
+        ['4', 'Maturity', 'Harvest when bolls open evenly.', 'Month 5-6']
+      ]
+    },
+    turmeric: {
+      duration: '7 - 9 Months',
+      season: 'May - June',
+      water: 'Moderate',
+      ph: '6.0 - 7.5',
+      temp: '20°C - 35°C',
+      n: '60 kg/ac',
+      p: '25 kg/ac',
+      k: '25 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Plant healthy rhizomes after land prep.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Apply nutrients and maintain moisture.', 'Month 1-3'],
+        ['3', 'Development', 'Encourage rhizome enlargement.', 'Month 4-6'],
+        ['4', 'Maturity', 'Harvest after leaves dry down.', 'Month 7-9']
+      ]
+    },
+    pomegranate: {
+      duration: '2 - 3 Years',
+      season: 'Warm Season',
+      water: 'Low',
+      ph: '5.5 - 7.5',
+      temp: '18°C - 32°C',
+      n: '50 kg/ac',
+      p: '20 kg/ac',
+      k: '20 kg/ac',
+      roadmap: [
+        ['1', 'Planting', 'Set healthy saplings in spaced pits.', 'Month 1'],
+        ['2', 'Canopy', 'Prune and train branches for shape.', 'Month 2-6'],
+        ['3', 'Flowering', 'Protect blossoms and set fruit well.', 'Month 7-12'],
+        ['4', 'Harvest', 'Pick mature fruits at colour break.', 'After Year 2']
+      ]
+    },
+    jute: {
+      duration: '4 - 5 Months',
+      season: 'Summer / Early Monsoon',
+      water: 'Moderate',
+      ph: '6.0 - 7.5',
+      temp: '24°C - 37°C',
+      n: '50 kg/ac',
+      p: '20 kg/ac',
+      k: '20 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Sow in moist, fine-textured soil.', 'Week 1-2'],
+        ['2', 'Growth', 'Maintain even moisture and thin the stand.', 'Month 1-2'],
+        ['3', 'Fibre stage', 'Manage weeds and watch fibre quality.', 'Month 2-4'],
+        ['4', 'Harvest', 'Harvest at proper fibre maturity.', 'Month 4-5']
+      ]
+    },
+    maize: {
+      duration: '3 - 4 Months',
+      season: 'Kharif / Rabi',
+      water: 'Moderate',
+      ph: '5.8 - 7.5',
+      temp: '18°C - 32°C',
+      n: '50 kg/ac',
+      p: '20 kg/ac',
+      k: '20 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Plant seeds in warm, well-drained soil.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Keep nitrogen supply steady.', 'Month 1-2'],
+        ['3', 'Tasseling', 'Protect the crop from moisture stress.', 'Month 2-3'],
+        ['4', 'Harvest', 'Harvest cobs at physiological maturity.', 'Month 3-4']
+      ]
+    },
+    cotton: {
+      duration: '5 - 6 Months',
+      season: 'Kharif',
+      water: 'Moderate',
+      ph: '6.0 - 8.0',
+      temp: '21°C - 37°C',
+      n: '60 kg/ac',
+      p: '25 kg/ac',
+      k: '25 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Plant treated seeds in prepared soil.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Manage weeds and monitor crop stand.', 'Month 1-2'],
+        ['3', 'Flowering', 'Maintain moisture and pest vigilance.', 'Month 3-4'],
+        ['4', 'Maturity', 'Harvest when bolls open evenly.', 'Month 5-6']
+      ]
+    },
+    banana: {
+      duration: '9 - 12 Months',
+      season: 'Warm Season',
+      water: 'High',
+      ph: '6.0 - 7.5',
+      temp: '24°C - 35°C',
+      n: '80 kg/ac',
+      p: '30 kg/ac',
+      k: '30 kg/ac',
+      roadmap: [
+        ['1', 'Planting', 'Use healthy suckers and rich soil.', 'Week 1-2'],
+        ['2', 'Vegetative', 'Maintain moisture and mulch.', 'Month 1-4'],
+        ['3', 'Bunching', 'Support bunches and feed plants.', 'Month 5-8'],
+        ['4', 'Harvest', 'Harvest when fingers fill well.', 'Month 9-12']
+      ]
+    },
+    coffee: {
+      duration: '2 - 3 Years',
+      season: 'Shade Season',
+      water: 'Moderate',
+      ph: '6.0 - 6.5',
+      temp: '18°C - 28°C',
+      n: '40 kg/ac',
+      p: '25 kg/ac',
+      k: '25 kg/ac',
+      roadmap: [
+        ['1', 'Planting', 'Plant shaded seedlings in rich soil.', 'Month 1'],
+        ['2', 'Vegetative', 'Mulch and manage canopy shade.', 'Month 2-12'],
+        ['3', 'Cherry fill', 'Protect berries through the season.', 'Seasonal'],
+        ['4', 'Harvest', 'Pick cherries at full ripeness.', 'After Year 2']
+      ]
+    },
+    watermelon: {
+      duration: '3 - 4 Months',
+      season: 'Summer',
+      water: 'Moderate',
+      ph: '6.0 - 7.5',
+      temp: '24°C - 35°C',
+      n: '45 kg/ac',
+      p: '20 kg/ac',
+      k: '20 kg/ac',
+      roadmap: [
+        ['1', 'Sowing', 'Plant on raised beds with good drainage.', 'Week 1-2'],
+        ['2', 'Vine growth', 'Guide vines and manage weeds.', 'Month 1-2'],
+        ['3', 'Fruit set', 'Ensure moisture for fruit filling.', 'Month 2-3'],
+        ['4', 'Harvest', 'Pick fruits at full maturity.', 'Month 3-4']
+      ]
+    }
+  };
+
+  return profiles[key] || {
+    duration: '3 - 6 Months',
+    season: 'Depends on crop',
+    water: 'Moderate',
+    ph: '6.0 - 7.5',
+    temp: '20°C - 35°C',
+    n: '60 kg/ac',
+    p: '25 kg/ac',
+    k: '25 kg/ac',
+    roadmap: [
+      ['1', 'Sowing', 'Prepare the field and use healthy seed.', 'Week 1-2'],
+      ['2', 'Vegetative', 'Keep moisture and nutrients balanced.', 'Month 1-3'],
+      ['3', 'Development', 'Monitor pests and disease pressure.', 'Month 3-5'],
+      ['4', 'Maturity', 'Harvest at the right stage for best price.', 'Month 5-6']
+    ]
+  };
+}
+
+async function getLiveWeather() {
+  const location = document.getElementById('location').value.trim();
+  if (!location) {
+    toast('Please enter a location first');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/farmer/api/weather?location=${encodeURIComponent(location)}`);
+    const data = await response.json();
+    if (data.success) {
+      document.querySelector('input[name="temperature"]').value = data.temperature;
+      document.querySelector('input[name="humidity"]').value = data.humidity;
+      toast('Weather data loaded successfully');
+    } else {
+      toast(data.error || 'Could not fetch weather data');
+    }
+  } catch (error) {
+    toast('Error fetching weather data');
+  }
+}
+
+function buildResultMarkup(rec, economics) {
+  const acreage = Number(economics.acreage || 1);
+  const yieldPerAcreKg = Number(economics.yield_per_acre_kg || 0);
+  const totalYieldKg = Number(economics.expected_yield_kg || (yieldPerAcreKg * acreage));
+  const totalYieldTons = Number(economics.expected_yield_tons || (totalYieldKg / 1000));
+  const pricePerKg = Number(economics.price_per_kg || 0);
+  const expectedIncome = Number(economics.expected_income || (totalYieldKg * pricePerKg));
+  const expectedCost = Number(economics.expected_cost || 0);
+  const expectedProfit = Number(economics.expected_profit || (expectedIncome - expectedCost));
+  const profile = cropProfile(rec.crop);
+  const imageUrl = pickImage(rec.crop);
+
+  document.getElementById('resultTitle').textContent = `${cropLabel(rec.crop)} - Crop Details`;
+  document.getElementById('resultSubtle').textContent = 'Suitable crop selected for your farm. Values may vary by season and practices.';
+
+  document.getElementById('recommendationResult').innerHTML = `
+    <div class="result-grid">
+      <div class="stack-gap">
+        <div class="panel overflow-hidden">
+          <div class="hero-image">
+            <img src="${imageUrl}" alt="${rec.crop} crop image" referrerpolicy="no-referrer" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #0f172a 0%, #1e293b 100%)';">
+            <div class="overlay"></div>
+            <div class="caption">${cropLabel(rec.crop)} Cultivation Overview</div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          Suitable crop: <strong>${rec.crop}</strong>.
+          Expected yield = <strong>${totalYieldKg.toLocaleString()} kg</strong>
+          (<strong>${totalYieldTons.toFixed(2)} tons</strong>) and expected income = <strong>${formatCurrency(expectedIncome)}</strong>.
+          <div class="muted-note">Expected yield and income are estimates and may vary with weather, irrigation, and farm practices.</div>
+        </div>
+      </div>
+
+      <div class="stat-card p-5">
+        <div class="section-title mb-4"><i class="fas fa-chart-line text-emerald-700"></i> Quick Stats</div>
+        <div class="quick-stat">
+          <div class="quick-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div><div class="quick-label">Duration</div><div class="quick-value">${profile.duration}</div></div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-icon"><i class="fas fa-sun"></i></div>
+          <div><div class="quick-label">Best Season</div><div class="quick-value">${profile.season}</div></div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-icon"><i class="fas fa-tint"></i></div>
+          <div><div class="quick-label">Water Req.</div><div class="quick-value" style="color:#2563eb">${profile.water}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-title mb-4"><i class="fas fa-route text-emerald-700"></i> Growth Roadmap</div>
+      <div class="roadmap-grid">
+        ${profile.roadmap.map(([step, title, desc, window]) => `
+          <div class="roadmap-card">
+            <div class="roadmap-step ${step === '1' ? '' : 'soft'}">${step}</div>
+            <h4>${title}</h4>
+            <p>${desc}</p>
+            <div class="roadmap-chip">${window}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="info-card overflow-hidden">
+        <div class="info-header">
+          <h3><i class="fas fa-money-bill-wave"></i> Financial Estimates</h3>
+          <span style="font-size:0.88rem; opacity:0.8;">Per Acre</span>
+        </div>
+        <div class="info-body">
+          <div class="finance-row">
+            <span>Estimated Investment</span>
+            <span>${formatCurrency(expectedCost)}</span>
+          </div>
+          <div class="finance-row">
+            <span>Expected Yield (Avg)</span>
+            <span>${(totalYieldKg / 1000).toFixed(2)} Tons</span>
+          </div>
+          <div class="finance-row">
+            <span>Market Price</span>
+            <span style="color:#166534">${formatCurrency(pricePerKg * 1)} / Kg</span>
+          </div>
+          <div class="mt-4 p-4 rounded-2xl" style="background:#eff7ee;">
+            <div class="flex items-center justify-between gap-3">
+              <span style="font-weight:900;color:#14532d;">Projected Net Profit</span>
+              <span style="font-size:1.2rem;font-weight:900;color:#14532d;">${formatCurrency(expectedProfit)}</span>
+            </div>
+            <div class="mt-3 h-2 rounded-full" style="background:#d7e6d4;overflow:hidden;">
+              <div class="h-2 rounded-full" style="width:72%; background:#2e7d32;"></div>
+            </div>
+            <div class="muted-note">Estimated using the acreage value and the reference crop economics table.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card overflow-hidden">
+        <div class="info-header" style="background:#fff;color:#111827;border-bottom:1px solid rgba(148,163,184,0.16);border-radius:18px 18px 0 0;">
+          <h3><i class="fas fa-cogs" style="color:#1f7a32;"></i> Technical Requirements</h3>
+        </div>
+        <div class="info-body">
+          <div>
+            <div class="flex justify-between mb-2">
+              <span class="tech-label">Soil pH</span>
+              <span class="tech-value" style="color:#166534">${profile.ph}</span>
+            </div>
+            <div class="h-2.5 rounded-full" style="background:#eef2ee;overflow:hidden;">
+              <div class="h-2.5 rounded-full" style="width:62%; background:#1f7a32;"></div>
+            </div>
+            <div class="mt-2 text-xs text-slate-500">Your current pH: <span style="font-weight:900;color:#166534">${rec.parameters.ph} (input)</span></div>
+          </div>
+
+          <div class="tech-grid mt-5">
+            <div class="tech-chip">
+              <div class="small">Nitrogen (N)</div>
+              <div class="font-black text-slate-900">${profile.n}</div>
+            </div>
+            <div class="tech-chip">
+              <div class="small">Phos. (P)</div>
+              <div class="font-black text-slate-900">${profile.p}</div>
+            </div>
+            <div class="tech-chip">
+              <div class="small">Potash (K)</div>
+              <div class="font-black text-slate-900">${profile.k}</div>
+            </div>
+          </div>
+
+          <div class="mt-5 rounded-2xl border border-dashed border-emerald-200 px-4 py-4 flex items-center gap-4">
+            <div class="quick-icon" style="width:2.7rem;height:2.7rem;"><i class="fas fa-thermometer-half"></i></div>
+            <div>
+              <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Ideal Temperature Range</div>
+              <div class="font-black text-slate-900">${profile.temp}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createPlan() {
+  if (!lastRecommendation) return;
+  toast('Plan created successfully');
+}
+
+document.getElementById('recommendationForm').addEventListener('submit', async (event) => {
+  if (!event.target.checkValidity()) {
+    event.preventDefault();
+    return;
+  }
+
+  event.preventDefault();
+
+  const submitButton = event.target.querySelector('button[type="submit"]');
+  const originalHtml = submitButton.innerHTML;
+  const formData = new FormData(event.target);
+  const payload = Object.fromEntries(formData.entries());
+
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+  try {
+    const response = await fetch('/farmer/crop-recommendation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Error getting recommendation');
+    }
+
+    lastRecommendation = result;
+    buildResultMarkup(result.recommendation, result.economics || {});
+    showResultView();
+  } catch (error) {
+    toast(error.message || 'Error getting recommendation');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalHtml;
+  }
 });
+
+setupRangeValidation(document.getElementById('recommendationForm'));
 </script>
 {% endblock %}
+
+
