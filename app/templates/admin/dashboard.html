@@ -1,225 +1,273 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Platform Management{% endblock %}
+{% block title %}Admin Dashboard - AgriConnect{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: Inter, sans-serif; background: linear-gradient(180deg, #eef6ff 0%, #f8fafc 44%, #ecfdf5 100%); }
+  .admin-shell { max-width: 1180px; margin: 0 auto; }
+  .glass {
+    background: rgba(255,255,255,.9);
+    border: 1px solid rgba(148,163,184,.2);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(15,23,42,.07);
+    backdrop-filter: blur(16px);
+  }
+  .eyebrow { color: #5b7c67; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+  .page-title { color: #0f172a; font-size: clamp(1.4rem, 2.8vw, 2.2rem); line-height: 1.05; font-weight: 800; letter-spacing: -.04em; }
+  .subtle { color: #64748b; font-size: .88rem; }
+  .icon-badge { width: 2.65rem; height: 2.65rem; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 10px 20px rgba(15,23,42,.12); }
+  .metric-label { color: #7c8aa2; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .metric-value { color: #0f172a; font-size: 1.1rem; font-weight: 800; }
+  .chart-shell { position: relative; width: min(100%, 15rem); aspect-ratio: 1; margin: 0 auto; }
+  .pie-chart { width: 100%; height: 100%; border-radius: 9999px; background: var(--chart-gradient); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 20px 40px rgba(15,23,42,.12); position: relative; }
+  .pie-chart::after { content: ""; position: absolute; inset: 20%; border-radius: 9999px; background: rgba(255,255,255,.95); box-shadow: inset 0 0 0 1px rgba(148,163,184,.18); }
+  .chart-center { position: absolute; inset: 50%; transform: translate(-50%,-50%); width: 48%; text-align: center; z-index: 2; pointer-events: none; }
+  .chart-center strong { display: block; color: #0f172a; font-size: 1.2rem; line-height: 1; font-weight: 800; }
+  .chart-center span { color: #64748b; font-size: .68rem; font-weight: 700; }
+  .tab-btn.active { background: #0f172a; color: #fff; }
+  .table-row { border-top: 1px solid #e2e8f0; }
+  .scroll { max-height: 24rem; overflow-y: auto; }
+  .bar-track { height: .7rem; overflow: hidden; border-radius: 9999px; background: #e2e8f0; }
+  .bar-fill { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #16a34a, #0ea5e9); }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-8 text-white mb-8">
-            <h1 class="text-3xl font-bold">Admin Control Panel</h1>
-            <p class="mt-2">Manage users, monitor platform, and oversee operations</p>
+<div class="px-4 py-4">
+  <div class="admin-shell space-y-4">
+    <div class="glass p-4 md:p-5">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div class="eyebrow mb-1.5">Platform command center</div>
+          <div class="page-title">Welcome, {{ current_user.username|title }}</div>
+          <div class="subtle mt-1.5 max-w-2xl">Monitor users, sales, products, and marketplace health from one dashboard.</div>
         </div>
-        
-        <!-- Platform Stats -->
-        <div class="grid md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500">Total Users</p>
-                        <h3 class="text-2xl font-bold">{{ stats.total_users }}</h3>
-                    </div>
-                    <i class="fas fa-users text-3xl text-blue-500"></i>
-                </div>
-                <div class="mt-2 text-sm">
-                    <span class="text-green-600">{{ stats.farmers }} Farmers</span> |
-                    <span class="text-purple-600">{{ stats.consumers }} Consumers</span> |
-                    <span class="text-orange-600">{{ stats.suppliers }} Suppliers</span>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500">Total Products</p>
-                        <h3 class="text-2xl font-bold">{{ stats.total_products }}</h3>
-                    </div>
-                    <i class="fas fa-box text-3xl text-green-500"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500">Total Orders</p>
-                        <h3 class="text-2xl font-bold">{{ stats.total_orders }}</h3>
-                    </div>
-                    <i class="fas fa-shopping-cart text-3xl text-yellow-500"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500">Revenue</p>
-                        <h3 class="text-2xl font-bold">₹{{ stats.total_revenue }}</h3>
-                    </div>
-                    <i class="fas fa-chart-line text-3xl text-purple-500"></i>
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-2">
+          <a href="{{ url_for('admin.dashboard') }}" class="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-bold text-white">Refresh</a>
+          <a href="{{ url_for('auth.logout') }}" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700">Logout</a>
         </div>
-        
-        <!-- User Management Tabs -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="border-b">
-                <div class="flex">
-                    <button class="tab-btn active px-6 py-3 text-gray-700 hover:text-red-600 border-b-2 border-red-600" onclick="showTab('farmers')">
-                        Farmers
-                    </button>
-                    <button class="tab-btn px-6 py-3 text-gray-700 hover:text-red-600" onclick="showTab('consumers')">
-                        Consumers
-                    </button>
-                    <button class="tab-btn px-6 py-3 text-gray-700 hover:text-red-600" onclick="showTab('suppliers')">
-                        Suppliers
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Farmers Table -->
-            <div id="farmersTab" class="tab-content p-6">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Name</th>
-                                <th class="px-4 py-2 text-left">Email</th>
-                                <th class="px-4 py-2 text-left">Farm Name</th>
-                                <th class="px-4 py-2 text-left">Phone</th>
-                                <th class="px-4 py-2 text-left">Status</th>
-                                <th class="px-4 py-2 text-left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for farmer in farmers %}
-                            <tr class="border-t">
-                                <td class="px-4 py-2">{{ farmer.username }}</td>
-                                <td class="px-4 py-2">{{ farmer.email }}</td>
-                                <td class="px-4 py-2">{{ farmer.farm_name or '-' }}</td>
-                                <td class="px-4 py-2">{{ farmer.phone or '-' }}</td>
-                                <td class="px-4 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs {% if farmer.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                        {{ 'Active' if farmer.is_active else 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2">
-                                    <button onclick="toggleUserStatus({{ farmer.id }})" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Consumers Table -->
-            <div id="consumersTab" class="tab-content p-6 hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Name</th>
-                                <th class="px-4 py-2 text-left">Email</th>
-                                <th class="px-4 py-2 text-left">Phone</th>
-                                <th class="px-4 py-2 text-left">Orders</th>
-                                <th class="px-4 py-2 text-left">Status</th>
-                                <th class="px-4 py-2 text-left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for consumer in consumers %}
-                            <tr class="border-t">
-                                <td class="px-4 py-2">{{ consumer.username }}</td>
-                                <td class="px-4 py-2">{{ consumer.email }}</td>
-                                <td class="px-4 py-2">{{ consumer.phone or '-' }}</td>
-                                <td class="px-4 py-2">{{ consumer.orders|length }}</td>
-                                <td class="px-4 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs {% if consumer.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                        {{ 'Active' if consumer.is_active else 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2">
-                                    <button onclick="toggleUserStatus({{ consumer.id }})" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Suppliers Table -->
-            <div id="suppliersTab" class="tab-content p-6 hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Company</th>
-                                <th class="px-4 py-2 text-left">Email</th>
-                                <th class="px-4 py-2 text-left">GST</th>
-                                <th class="px-4 py-2 text-left">Products</th>
-                                <th class="px-4 py-2 text-left">Status</th>
-                                <th class="px-4 py-2 text-left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for supplier in suppliers %}
-                            <tr class="border-t">
-                                <td class="px-4 py-2">{{ supplier.company_name or supplier.username }}</td>
-                                <td class="px-4 py-2">{{ supplier.email }}</td>
-                                <td class="px-4 py-2">{{ supplier.gst_number or '-' }}</td>
-                                <td class="px-4 py-2">{{ supplier.products|length }}</td>
-                                <td class="px-4 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs {% if supplier.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                        {{ 'Active' if supplier.is_active else 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2">
-                                    <button onclick="toggleUserStatus({{ supplier.id }})" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
 
+    <div class="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+      <div class="glass p-3.5"><div class="flex items-center gap-3"><div class="icon-badge" style="background:linear-gradient(135deg,#38bdf8,#2563eb)"><i class="fas fa-users"></i></div><div><div class="metric-label">Users</div><div class="metric-value">{{ stats.total_users }}</div></div></div></div>
+      <div class="glass p-3.5"><div class="flex items-center gap-3"><div class="icon-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-box"></i></div><div><div class="metric-label">Products</div><div class="metric-value">{{ stats.total_products }}</div></div></div></div>
+      <div class="glass p-3.5"><div class="flex items-center gap-3"><div class="icon-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-cart-shopping"></i></div><div><div class="metric-label">Orders</div><div class="metric-value">{{ stats.total_orders }}</div></div></div></div>
+      <div class="glass p-3.5"><div class="flex items-center gap-3"><div class="icon-badge" style="background:linear-gradient(135deg,#a855f7,#7c3aed)"><i class="fas fa-chart-line"></i></div><div><div class="metric-label">Revenue</div><div class="metric-value">Rs. {{ "{:,.0f}".format(stats.total_revenue or 0) }}</div></div></div></div>
+    </div>
+
+    <div class="grid gap-3 lg:grid-cols-3">
+      <div class="glass p-4">
+        <div class="font-extrabold text-slate-900">User Roles</div>
+        <div class="subtle mb-4">{{ total_role_users }} platform users</div>
+        <div class="chart-shell">
+          <div class="pie-chart" style="--chart-gradient: {{ role_chart_gradient }};"></div>
+          <div class="chart-center"><strong>{{ total_role_users }}</strong><span>Users</span></div>
+        </div>
+        <div class="mt-4 space-y-2">
+          {% for segment in role_segments %}
+          <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+            <span class="font-semibold text-slate-700"><i class="fas fa-circle mr-2 text-[10px]" style="color: {{ segment.color }}"></i>{{ segment.label }}</span>
+            <span class="font-black text-slate-900">{{ segment.count }} · {{ "%.0f"|format(segment.percent) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="glass p-4">
+        <div class="font-extrabold text-slate-900">Order Status</div>
+        <div class="subtle mb-4">{{ total_status_orders }} total orders</div>
+        <div class="chart-shell">
+          <div class="pie-chart" style="--chart-gradient: {{ order_chart_gradient }};"></div>
+          <div class="chart-center"><strong>{{ total_status_orders }}</strong><span>Orders</span></div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          {% for segment in order_status_segments %}
+          <div class="rounded-2xl bg-slate-50 px-3 py-2">
+            <div class="text-xs font-bold text-slate-500">{{ segment.label }}</div>
+            <div class="text-lg font-black" style="color: {{ segment.color }}">{{ segment.count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="glass p-4">
+        <div class="font-extrabold text-slate-900">Product Controls</div>
+        <div class="subtle mb-4">Inventory split and availability</div>
+        <div class="space-y-4">
+          {% for item in product_mix %}
+          <div>
+            <div class="mb-1 flex items-center justify-between text-sm">
+              <span class="font-semibold text-slate-700">{{ item.label }}</span>
+              <span class="font-black text-slate-900">{{ item.count }}</span>
+            </div>
+            <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+              <div class="h-full rounded-full" style="width: {{ (item.count / max_product_mix * 100) if max_product_mix else 0 }}%; background: {{ item.color }};"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="glass p-4">
+      <div class="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div class="font-extrabold text-slate-900">Revenue Dashboard</div>
+          <div class="subtle">Total revenue, recent payments, order earnings, and monthly summary</div>
+        </div>
+        <div class="text-2xl font-black text-emerald-700">Rs. {{ "{:,.0f}".format(stats.total_revenue or 0) }}</div>
+      </div>
+
+      <div class="grid gap-3 lg:grid-cols-[1fr_1fr]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="mb-3 text-sm font-extrabold text-slate-900">Recent Payments</div>
+          <div class="space-y-3">
+            {% for order in recent_payments %}
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+              <div class="min-w-0">
+                <div class="truncate text-sm font-bold text-slate-800">#{{ order.order_number }}</div>
+                <div class="text-xs text-slate-500">{{ order.payment_method|upper }} · {{ order.status|title }}</div>
+              </div>
+              <div class="text-sm font-black text-emerald-700">Rs. {{ "%.0f"|format(order.total_amount or 0) }}</div>
+            </div>
+            {% else %}
+            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">No payments yet.</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="mb-3 text-sm font-extrabold text-slate-900">Monthly Summary</div>
+          {% set max_month = monthly_summary|map(attribute='amount')|max if monthly_summary else 1 %}
+          <div class="space-y-4">
+            {% for item in monthly_summary %}
+            <div>
+              <div class="mb-1 flex justify-between text-sm">
+                <span class="font-bold text-slate-700">{{ item.month }}</span>
+                <span class="font-black text-slate-900">Rs. {{ "%.0f"|format(item.amount) }}</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ (item.amount / max_month * 100) if max_month else 0 }}%;"></div></div>
+            </div>
+            {% else %}
+            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">No monthly revenue yet.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4">
+        <div class="mb-3 text-sm font-extrabold text-slate-900">Order Earnings</div>
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs uppercase tracking-wider text-slate-400">
+            <tr><th class="py-2">Order</th><th>Buyer</th><th>Payment</th><th>Status</th><th class="text-right">Amount</th></tr>
+          </thead>
+          <tbody>
+            {% for item in order_earnings %}
+            <tr class="border-t border-slate-200">
+              <td class="py-3 font-bold text-slate-800">#{{ item.order_number }}</td>
+              <td>{{ item.buyer }}</td>
+              <td>{{ item.payment_method|upper }}</td>
+              <td>{{ item.status|title }}</td>
+              <td class="text-right font-black text-emerald-700">Rs. {{ "%.0f"|format(item.amount) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="py-8 text-center text-slate-400">No earnings yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid gap-3 xl:grid-cols-[1.35fr_.65fr]">
+      <div class="glass overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+          <div>
+            <div class="font-extrabold text-slate-900">User Management</div>
+            <div class="subtle">Activate or pause users by role</div>
+          </div>
+          <div class="flex rounded-2xl bg-slate-100 p-1">
+            <button class="tab-btn active rounded-xl px-4 py-2 text-sm font-bold" onclick="showTab(event, 'farmers')">Farmers</button>
+            <button class="tab-btn rounded-xl px-4 py-2 text-sm font-bold text-slate-700" onclick="showTab(event, 'consumers')">Consumers</button>
+            <button class="tab-btn rounded-xl px-4 py-2 text-sm font-bold text-slate-700" onclick="showTab(event, 'suppliers')">Suppliers</button>
+          </div>
+        </div>
+
+        {% macro status_badge(user) -%}
+          <span class="rounded-full px-2.5 py-1 text-xs font-bold {% if user.is_active %}bg-emerald-100 text-emerald-700{% else %}bg-rose-100 text-rose-700{% endif %}">{{ 'Active' if user.is_active else 'Inactive' }}</span>
+        {%- endmacro %}
+
+        <div id="farmersTab" class="tab-content scroll p-4">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs uppercase tracking-wider text-slate-400"><tr><th class="py-2">Name</th><th>Email</th><th>Farm</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>{% for farmer in farmers %}<tr class="table-row"><td class="py-3 font-bold text-slate-800">{{ farmer.username }}</td><td>{{ farmer.email }}</td><td>{{ farmer.farm_name or '-' }}</td><td>{{ status_badge(farmer) }}</td><td><button onclick="toggleUserStatus({{ farmer.id }})" class="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">Toggle</button></td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        <div id="consumersTab" class="tab-content hidden scroll p-4">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs uppercase tracking-wider text-slate-400"><tr><th class="py-2">Name</th><th>Email</th><th>Orders</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>{% for consumer in consumers %}<tr class="table-row"><td class="py-3 font-bold text-slate-800">{{ consumer.username }}</td><td>{{ consumer.email }}</td><td>{{ consumer.orders|length }}</td><td>{{ status_badge(consumer) }}</td><td><button onclick="toggleUserStatus({{ consumer.id }})" class="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">Toggle</button></td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        <div id="suppliersTab" class="tab-content hidden scroll p-4">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs uppercase tracking-wider text-slate-400"><tr><th class="py-2">Company</th><th>Email</th><th>Products</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>{% for supplier in suppliers %}<tr class="table-row"><td class="py-3 font-bold text-slate-800">{{ supplier.company_name or supplier.username }}</td><td>{{ supplier.email }}</td><td>{{ supplier.products|length }}</td><td>{{ status_badge(supplier) }}</td><td><button onclick="toggleUserStatus({{ supplier.id }})" class="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">Toggle</button></td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="glass p-4">
+        <div class="font-extrabold text-slate-900">Recent Orders</div>
+        <div class="subtle mb-3">Latest marketplace activity</div>
+        <div class="space-y-3">
+          {% for order in recent_orders %}
+          <div class="rounded-2xl border border-slate-200 bg-white p-3">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="truncate text-sm font-bold text-slate-900">#{{ order.order_number }}</div>
+                <div class="text-xs text-slate-500">{{ order.order_date.strftime('%d %b, %I:%M %p') }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-black text-emerald-700">Rs. {{ "%.0f"|format(order.total_amount or 0) }}</div>
+                <div class="text-xs font-bold uppercase text-slate-500">{{ order.status }}</div>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">No orders yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-function showTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.add('hidden');
-    });
-    // Show selected tab
-    document.getElementById(`${tabName}Tab`).classList.remove('hidden');
-    
-    // Update button styles
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-red-600', 'text-red-600');
-        btn.classList.add('text-gray-700');
-    });
-    event.target.classList.add('border-red-600', 'text-red-600');
+function showTab(event, tabName) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+  document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+    btn.classList.add('text-slate-700');
+  });
+  event.currentTarget.classList.add('active');
+  event.currentTarget.classList.remove('text-slate-700');
 }
 
 async function toggleUserStatus(userId) {
-    if (confirm('Are you sure you want to change this user\'s status?')) {
-        try {
-            const response = await fetch(`/admin/toggle-user/${userId}`, {
-                method: 'POST'
-            });
-            const result = await response.json();
-            if (result.success) {
-                location.reload();
-            }
-        } catch (error) {
-            alert('Error updating user status');
-        }
-    }
+  if (!confirm("Change this user's status?")) return;
+  try {
+    const response = await fetch(`/admin/toggle-user/${userId}`, { method: 'POST' });
+    const result = await response.json();
+    if (result.success) location.reload();
+  } catch (error) {
+    alert('Error updating user status');
+  }
 }
 </script>
 {% endblock %}

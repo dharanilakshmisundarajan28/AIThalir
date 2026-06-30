@@ -20,6 +20,10 @@
                 </div>
                 <div class="p-6">
                     <p class="text-gray-600 text-sm mb-4">Access crop recommendations, mandi prices, government schemes, and sell your produce</p>
+                    <div class="mb-4 rounded-xl bg-green-50 p-3 text-xs text-green-900">
+                        <div><b>Email:</b> farmer@example.com</div>
+                        <div><b>Password:</b> Farmer@123</div>
+                    </div>
                     <div class="space-y-3">
                         <a href="{{ url_for('auth.farmer_login') }}" class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition">
                             Login
@@ -39,6 +43,10 @@
                 </div>
                 <div class="p-6">
                     <p class="text-gray-600 text-sm mb-4">Browse fresh produce, compare prices, and buy directly from farmers</p>
+                    <div class="mb-4 rounded-xl bg-blue-50 p-3 text-xs text-blue-900">
+                        <div><b>Email:</b> consumer@example.com</div>
+                        <div><b>Password:</b> Consumer@123</div>
+                    </div>
                     <div class="space-y-3">
                         <a href="{{ url_for('auth.consumer_login') }}" class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition">
                             Login
@@ -58,6 +66,10 @@
                 </div>
                 <div class="p-6">
                     <p class="text-gray-600 text-sm mb-4">List fertilizers and agricultural inputs for farmers to purchase</p>
+                    <div class="mb-4 rounded-xl bg-purple-50 p-3 text-xs text-purple-900">
+                        <div><b>Email:</b> supplier@example.com</div>
+                        <div><b>Password:</b> Supplier@123</div>
+                    </div>
                     <div class="space-y-3">
                         <a href="{{ url_for('auth.supplier_login') }}" class="block w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition">
                             Login
@@ -77,6 +89,10 @@
                 </div>
                 <div class="p-6">
                     <p class="text-gray-600 text-sm mb-4">Manage users, monitor platform activity, and oversee operations</p>
+                    <div class="mb-4 rounded-xl bg-red-50 p-3 text-xs text-red-900">
+                        <div><b>Email:</b> admin@agriplatform.com</div>
+                        <div><b>Password:</b> Admin@123</div>
+                    </div>
                     <div class="space-y-3">
                         <a href="{{ url_for('auth.admin_login') }}" class="block w-full bg-red-600 text-white text-center py-2 rounded-lg hover:bg-red-700 transition">
                             Admin Login

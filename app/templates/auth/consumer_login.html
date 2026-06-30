@@ -13,6 +13,12 @@
             </div>
             
             <form method="POST" class="p-6 space-y-4">
+                <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                    <div class="font-bold mb-1">Demo Consumer Account</div>
+                    <div>Email: <span class="font-semibold">consumer@example.com</span></div>
+                    <div>Password: <span class="font-semibold">Consumer@123</span></div>
+                    <button type="button" onclick="fillDemoLogin('consumer@example.com', 'Consumer@123')" class="mt-3 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700">Use demo login</button>
+                </div>
                 <div>
                     <label class="block text-gray-700 mb-2">Email Address</label>
                     <input type="email" name="email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -34,4 +40,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function fillDemoLogin(email, password) {
+    document.querySelector('input[name="email"]').value = email;
+    document.querySelector('input[name="password"]').value = password;
+}
+</script>
 {% endblock %}

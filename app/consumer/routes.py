@@ -20,8 +20,14 @@ def dashboard():
     if guard:
         return guard
     
-    # Get available products
-    products = Product.query.filter_by(is_available=True, is_fertilizer=False).order_by(Product.created_at.desc()).limit(12).all()
+    allowed_categories = ['vegetables', 'fruits', 'grains']
+
+    # Get available consumer products only
+    products = Product.query.filter(
+        Product.is_available.is_(True),
+        Product.is_fertilizer.is_(False),
+        Product.category.in_(allowed_categories)
+    ).order_by(Product.created_at.desc()).limit(12).all()
     categories = sorted({product.category for product in products if product.category})
     
     # Get recent orders
@@ -41,10 +47,15 @@ def dashboard():
 def browse_products():
     category = request.args.get('category', 'all')
     search = request.args.get('search', '')
+    allowed_categories = ['vegetables', 'fruits', 'grains']
     
-    query = Product.query.filter_by(is_available=True, is_fertilizer=False)
+    query = Product.query.filter(
+        Product.is_available.is_(True),
+        Product.is_fertilizer.is_(False),
+        Product.category.in_(allowed_categories)
+    )
     
-    if category != 'all':
+    if category != 'all' and category in allowed_categories:
         query = query.filter_by(category=category)
     
     if search:

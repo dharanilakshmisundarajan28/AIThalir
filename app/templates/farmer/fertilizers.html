@@ -2,91 +2,180 @@
 
 {% block title %}Fertilizer Store - AgriConnect{% endblock %}
 
-{% block content %}
-<div class="space-y-5">
-  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-900 to-green-700 px-5 py-4 text-white shadow-xl">
-    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div>
-        <p class="text-[10px] font-semibold uppercase tracking-[0.35em] text-emerald-200">Fertilizers</p>
-        <h1 class="mt-1 text-2xl font-black tracking-tight md:text-[2rem]">Fertilizer Marketplace</h1>
-      </div>
+{% block extra_head %}
+<style>
+  .store-shell { max-width: 1220px; margin: 0 auto; }
+  .store-top {
+    background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
+    border-radius: 22px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+  }
+  .cart-fab {
+    position: sticky;
+    top: 1rem;
+    z-index: 20;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .cart-fab:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24); }
+  .cart-count {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background: #f59e0b;
+    color: #111827;
+    font-size: .7rem;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+  }
+  .filter-card {
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+  }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: .9rem;
+  }
+  .shop-card {
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .shop-card:hover {
+    transform: translateY(-3px);
+    border-color: #d1d5db;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .14);
+  }
+  .shop-card img { transition: transform .28s ease; }
+  .shop-card:hover img { transform: scale(1.04); }
+  .qty-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 6.8rem;
+    border-radius: 9999px;
+    background: #facc15;
+    color: #111827;
+    font-weight: 900;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .08);
+  }
+  .qty-btn {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .qty-btn:hover { background: rgba(255,255,255,.42); transform: scale(1.04); }
+  .add-pill {
+    min-width: 6.8rem;
+    border-radius: 9999px;
+    background: #facc15;
+    color: #111827;
+    padding: .55rem 1rem;
+    font-size: .86rem;
+    font-weight: 900;
+    box-shadow: 0 2px 8px rgba(250, 204, 21, .32);
+    transition: background .2s ease, transform .2s ease;
+  }
+  .add-pill:hover { background: #fbbf24; transform: translateY(-1px); }
+</style>
+{% endblock %}
 
-      <div class="flex flex-wrap items-center gap-3">
-        <a href="{{ url_for('marketplace.view_cart') }}" class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur hover:bg-white/15">
-          <i class="fas fa-cart-shopping mr-2"></i>
-          Cart ({{ cart_count or 0 }})
-        </a>
-        <a href="{{ url_for('marketplace.products') }}?type=fertilizer" class="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600">
-          <i class="fas fa-bag-shopping mr-2"></i>
-          Open Shop
-        </a>
+{% block content %}
+<div class="store-shell space-y-4">
+  <div class="flex justify-end">
+    <a href="{{ url_for('marketplace.view_cart') }}" class="cart-fab" aria-label="View cart">
+      <i class="fas fa-cart-shopping text-lg"></i>
+      <span id="cartCount" class="cart-count">{{ cart_count or 0 }}</span>
+    </a>
+  </div>
+
+  <section class="store-top px-5 py-5 text-white">
+    <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-emerald-200">Fertilizers</p>
+        <h1 class="mt-1 text-2xl font-black tracking-tight md:text-3xl">Fertilizer Marketplace</h1>
       </div>
+      <p class="max-w-lg text-sm font-medium text-emerald-50/85">Tap any product card or use Add to place fertilizer items into your cart.</p>
     </div>
   </section>
 
-  <section class="rounded-3xl bg-white p-4 shadow-lg">
-    <form method="get" class="grid gap-3 md:grid-cols-3">
+  <section class="filter-card p-3">
+    <form method="get" class="grid gap-2 md:grid-cols-[14rem_1fr_auto] md:items-end">
       <div>
-        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Category</label>
-        <select name="category" class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none">
+        <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Category</label>
+        <select name="category" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
           <option value="all">All</option>
           {% for category in categories or [] %}
           <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category|title }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="md:col-span-2">
-        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Search</label>
-        <div class="flex gap-2">
-          <input type="text" name="search" value="{{ search }}" placeholder="Search fertilizers..." class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none">
-          <button type="submit" class="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
+      <div>
+        <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Search</label>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search fertilizers..." class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
       </div>
+      <button type="submit" class="rounded-xl bg-slate-950 px-5 py-2 text-sm font-bold text-white transition hover:bg-slate-800">
+        <i class="fas fa-search"></i>
+      </button>
     </form>
   </section>
 
   <section>
     {% if products %}
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div class="product-grid">
       {% for product in products %}
-      <div class="overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-slate-200/70 transition hover:-translate-y-1 hover:shadow-xl">
-        <div class="h-40 bg-slate-100">
+      <article class="shop-card" tabindex="0" role="button" data-product-card data-product-id="{{ product.id }}" aria-label="Add {{ product.name }} to cart">
+        <div class="aspect-[1.08] bg-slate-100">
           <img
             src="{{ product.image_url or 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900' }}"
             alt="{{ product.name }}"
             class="h-full w-full object-cover"
           >
         </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-extrabold text-slate-900 md:text-base">{{ product.name }}</h3>
-              <p class="mt-1 line-clamp-2 text-xs text-slate-500 md:text-sm">
-                {{ product.description[:110] if product.description else 'No description available.' }}
-              </p>
-            </div>
-            <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Fertilizer</span>
+        <div class="space-y-2.5 p-3">
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-slate-900">{{ product.name }}</h3>
+            <span class="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">Fert</span>
           </div>
-
-          <div class="mt-3 flex items-center justify-between">
+          <p class="line-clamp-2 min-h-[2.25rem] text-xs leading-relaxed text-slate-500">
+            {{ product.description[:120] if product.description else 'Quality fertilizer for farm use.' }}
+          </p>
+          <div class="flex items-end justify-between gap-3 pt-1">
             <div>
-              <div class="text-lg font-black text-emerald-700">Rs. {{ "%.2f"|format(product.price) }}</div>
-              <div class="text-[11px] text-slate-500">per {{ product.unit or 'unit' }}</div>
+              <div class="text-lg font-black text-slate-950">Rs. {{ "%.0f"|format(product.price) }}</div>
+              <div class="text-[11px] font-semibold text-slate-500">per {{ product.unit or 'unit' }}</div>
             </div>
-          </div>
-
-          <div class="mt-4 flex gap-2">
-            <button type="button" onclick="addToCart({{ product.id }})" class="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
-              <i class="fas fa-cart-plus mr-2"></i>Add to Cart
-            </button>
-            <a href="{{ url_for('marketplace.view_cart') }}" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
-              Cart
-            </a>
+            <div class="qty-control" data-product-id="{{ product.id }}" data-qty="0">
+              <button type="button" class="add-pill" data-add-button>Add</button>
+            </div>
           </div>
         </div>
-      </div>
+      </article>
       {% endfor %}
     </div>
     {% else %}
@@ -99,28 +188,108 @@
   </section>
 </div>
 
-<script>
-async function addToCart(productId) {
-  try {
-    const response = await fetch(`/marketplace/add-to-cart/${productId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity: 1 })
-    });
+<div id="toastStack" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+{% endblock %}
 
-    const result = await response.json();
-    if (result.success) {
-      const note = document.createElement('div');
-      note.className = 'fixed right-4 top-4 z-50 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-xl';
-      note.innerHTML = '<i class="fas fa-circle-check mr-2"></i>Added to cart';
-      document.body.appendChild(note);
-      setTimeout(() => note.remove(), 1800);
-    } else {
-      alert(result.error || 'Could not add to cart');
-    }
+{% block extra_scripts %}
+<script>
+const toastStack = document.getElementById('toastStack');
+const cartCount = document.getElementById('cartCount');
+
+function showToast(message, kind = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-2xl transition ${kind === 'error' ? 'bg-rose-600' : 'bg-slate-950'}`;
+  toast.textContent = message;
+  toastStack.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+    setTimeout(() => toast.remove(), 220);
+  }, 1800);
+}
+
+function renderQty(control, qty) {
+  control.dataset.qty = qty;
+  if (qty <= 0) {
+    control.innerHTML = '<button type="button" class="add-pill" data-add-button>Add</button>';
+    return;
+  }
+  control.innerHTML = `
+    <div class="qty-wrap">
+      <button type="button" class="qty-btn" data-decrease aria-label="Decrease quantity"><i class="fas fa-minus text-xs"></i></button>
+      <span class="px-2 text-sm" data-qty-label>${qty}</span>
+      <button type="button" class="qty-btn" data-increase aria-label="Increase quantity"><i class="fas fa-plus text-xs"></i></button>
+    </div>
+  `;
+}
+
+async function syncCart(productId, quantity) {
+  const response = await fetch(`/marketplace/set-cart-quantity/${productId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Could not update cart');
+  }
+  return result;
+}
+
+async function addOne(control) {
+  const productId = control.dataset.productId;
+  const currentQty = Number(control.dataset.qty || 0);
+  const nextQty = Number(control.dataset.qty || 0) + 1;
+  renderQty(control, nextQty);
+  try {
+    const result = await syncCart(productId, nextQty);
+    cartCount.textContent = result.cart_count;
+    showToast('Added to cart');
   } catch (error) {
-    alert('Could not add to cart');
+    renderQty(control, currentQty);
+    showToast(error.message, 'error');
   }
 }
+
+async function decreaseOne(control) {
+  const productId = control.dataset.productId;
+  const currentQty = Number(control.dataset.qty || 0);
+  const nextQty = Math.max(Number(control.dataset.qty || 0) - 1, 0);
+  renderQty(control, nextQty);
+  try {
+    const result = await syncCart(productId, nextQty);
+    cartCount.textContent = result.cart_count;
+    showToast(nextQty ? 'Quantity updated' : 'Removed from cart');
+  } catch (error) {
+    renderQty(control, currentQty);
+    showToast(error.message, 'error');
+  }
+}
+
+document.querySelectorAll('[data-product-card]').forEach((card) => {
+  card.addEventListener('click', (event) => {
+    const control = card.querySelector('.qty-control');
+    if (!control || event.target.closest('.qty-control')) return;
+    addOne(control);
+  });
+  card.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      addOne(card.querySelector('.qty-control'));
+    }
+  });
+});
+
+document.addEventListener('click', (event) => {
+  const control = event.target.closest('.qty-control');
+  if (!control) return;
+  event.stopPropagation();
+  if (event.target.closest('[data-add-button]') || event.target.closest('[data-increase]')) {
+    addOne(control);
+  }
+  if (event.target.closest('[data-decrease]')) {
+    decreaseOne(control);
+  }
+});
 </script>
 {% endblock %}

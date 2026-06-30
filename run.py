@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, UserRole, GovernmentScheme
+from app.models import User, UserRole, GovernmentScheme, Product
 from app.schemes.defaults import get_default_schemes
 
 app = create_app()
@@ -71,6 +71,111 @@ def init_database():
             )
             supplier.set_password('Supplier@123')
             db.session.add(supplier)
+
+        db.session.flush()
+
+        sample_products = [
+            {
+                'name': 'Farm Fresh Tomatoes',
+                'description': 'Ripe red tomatoes harvested from local farms.',
+                'price': 38,
+                'quantity': 120,
+                'unit': 'kg',
+                'category': 'vegetables',
+                'image_url': 'https://images.unsplash.com/photo-1546470427-e26264be0b0d?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Organic Carrots',
+                'description': 'Crunchy carrots grown with natural farming practices.',
+                'price': 55,
+                'quantity': 90,
+                'unit': 'kg',
+                'category': 'vegetables',
+                'image_url': 'https://images.unsplash.com/photo-1447175008436-054170c2e979?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Green Spinach Bunch',
+                'description': 'Tender spinach leaves packed fresh for daily cooking.',
+                'price': 25,
+                'quantity': 80,
+                'unit': 'bunch',
+                'category': 'vegetables',
+                'image_url': 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Sweet Alphonso Mangoes',
+                'description': 'Premium seasonal mangoes with rich aroma and flavor.',
+                'price': 140,
+                'quantity': 70,
+                'unit': 'kg',
+                'category': 'fruits',
+                'image_url': 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Banana Robusta',
+                'description': 'Naturally ripened bananas for snacking and smoothies.',
+                'price': 48,
+                'quantity': 140,
+                'unit': 'dozen',
+                'category': 'fruits',
+                'image_url': 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Pomegranate Ruby',
+                'description': 'Juicy pomegranates with bright red arils.',
+                'price': 165,
+                'quantity': 55,
+                'unit': 'kg',
+                'category': 'fruits',
+                'image_url': 'https://images.unsplash.com/photo-1604495772376-9657f0035eb5?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Whole Wheat Grain',
+                'description': 'Cleaned whole wheat grains for flour milling.',
+                'price': 42,
+                'quantity': 300,
+                'unit': 'kg',
+                'category': 'grains',
+                'image_url': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Premium Sona Masoori Rice',
+                'description': 'Lightweight aromatic rice suitable for everyday meals.',
+                'price': 68,
+                'quantity': 260,
+                'unit': 'kg',
+                'category': 'grains',
+                'image_url': 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Pearl Millet Bajra',
+                'description': 'Nutritious bajra grains sourced from dryland farms.',
+                'price': 36,
+                'quantity': 210,
+                'unit': 'kg',
+                'category': 'grains',
+                'image_url': 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?auto=format&fit=crop&q=80&w=700',
+            },
+            {
+                'name': 'Fresh Green Beans',
+                'description': 'Crisp green beans sorted for freshness and quality.',
+                'price': 72,
+                'quantity': 85,
+                'unit': 'kg',
+                'category': 'vegetables',
+                'image_url': 'https://images.unsplash.com/photo-1567375698348-5d9d5ae99de0?auto=format&fit=crop&q=80&w=700',
+            },
+        ]
+
+        for item in sample_products:
+            existing_product = Product.query.filter_by(name=item['name'], seller_id=farmer.id).first()
+            if not existing_product:
+                db.session.add(Product(
+                    **item,
+                    seller_id=farmer.id,
+                    is_fertilizer=False,
+                    is_available=True
+                ))
         
         # Create government schemes
         schemes_data = get_default_schemes()

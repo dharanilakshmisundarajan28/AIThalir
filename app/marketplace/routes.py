@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Product, CartItem, Order, OrderItem, UserRole
 from datetime import datetime
+from sqlalchemy import func
 import uuid
 
 bp = Blueprint('marketplace', __name__, url_prefix='/marketplace')
@@ -13,8 +14,16 @@ def products():
     category = request.args.get('category', 'all')
     product_type = request.args.get('type', 'all')
     search = request.args.get('search', '')
+    allowed_consumer_categories = ['vegetables', 'fruits', 'grains']
     
     query = Product.query.filter_by(is_available=True)
+
+    if current_user.is_authenticated and current_user.role == UserRole.CONSUMER:
+        query = query.filter(
+            Product.is_fertilizer.is_(False),
+            Product.category.in_(allowed_consumer_categories)
+        )
+        product_type = 'crop'
     
     if category != 'all':
         query = query.filter_by(category=category)
@@ -61,6 +70,32 @@ def add_to_cart(product_id):
     
     db.session.commit()
     return jsonify({'success': True, 'message': 'Product added to cart'})
+
+
+@bp.route('/set-cart-quantity/<int:product_id>', methods=['POST'])
+@login_required
+def set_cart_quantity(product_id):
+    """Set a user's product quantity in the cart."""
+    if current_user.role.value not in ['consumer', 'farmer']:
+        return jsonify({'success': False, 'error': 'Only consumers and farmers can purchase'}), 403
+
+    quantity = max(0, int((request.json or {}).get('quantity', 0)))
+    product = Product.query.get_or_404(product_id)
+    if quantity > product.quantity:
+        return jsonify({'success': False, 'error': 'Insufficient stock'}), 400
+
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if quantity <= 0:
+        if cart_item:
+            db.session.delete(cart_item)
+    elif cart_item:
+        cart_item.quantity = quantity
+    else:
+        db.session.add(CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity))
+
+    db.session.commit()
+    cart_count = db.session.query(func.sum(CartItem.quantity)).filter_by(user_id=current_user.id).scalar() or 0
+    return jsonify({'success': True, 'quantity': quantity, 'cart_count': int(cart_count)})
 
 @bp.route('/cart')
 @login_required

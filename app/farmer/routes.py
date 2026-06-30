@@ -859,7 +859,7 @@ def fertilizers():
 
     products = query.order_by(Product.created_at.desc()).all()
     categories = sorted({product.category for product in products if product.category})
-    cart_count = db.session.query(CartItem).filter_by(user_id=current_user.id).count()
+    cart_count = db.session.query(db.func.sum(CartItem.quantity)).filter_by(user_id=current_user.id).scalar() or 0
 
     return render_template(
         'farmer/fertilizers.html',

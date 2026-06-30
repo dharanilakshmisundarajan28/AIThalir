@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Product, Order, OrderItem, User, UserRole
 from datetime import datetime
+from collections import defaultdict
 import uuid
 
 bp = Blueprint('supplier', __name__, url_prefix='/supplier')
@@ -72,6 +73,38 @@ def dashboard():
         f"{segment['color']} {segment['start']}% {segment['end']}%"
         for segment in order_status_segments
     ) + ')' if order_status_segments else 'conic-gradient(#e2e8f0 0% 100%)'
+
+    paid_orders = [row for row in orders if row['order']]
+    recent_payments = sorted(
+        paid_orders,
+        key=lambda row: row['order'].order_date or datetime.min,
+        reverse=True
+    )[:6]
+
+    order_earnings = []
+    monthly_totals = defaultdict(float)
+    for row in paid_orders:
+        order = row['order']
+        line_total = (row['price'] or 0) * (row['quantity'] or 0)
+        order_earnings.append({
+            'order_number': order.order_number,
+            'product_name': row['product'].name,
+            'payment_method': order.payment_method or 'cod',
+            'status': order.status or 'pending',
+            'order_date': order.order_date,
+            'amount': line_total,
+        })
+        if order.order_date:
+            monthly_totals[order.order_date.strftime('%b %Y')] += line_total
+
+    monthly_summary = [
+        {'month': month, 'amount': amount}
+        for month, amount in sorted(
+            monthly_totals.items(),
+            key=lambda item: datetime.strptime(item[0], '%b %Y'),
+            reverse=True
+        )[:6]
+    ]
     
     return render_template('supplier/dashboard.html', 
                          products=products,
@@ -81,7 +114,10 @@ def dashboard():
                          fulfilled_count=fulfilled_count,
                          order_status_segments=order_status_segments,
                          chart_gradient=chart_gradient,
-                         total_orders=total_orders)
+                         total_orders=total_orders,
+                         recent_payments=recent_payments,
+                         order_earnings=order_earnings[:8],
+                         monthly_summary=monthly_summary)
 
 @bp.route('/add-product', methods=['POST'])
 @login_required
