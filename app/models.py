@@ -142,6 +142,41 @@ class CropRecommendation(db.Model):
     confidence_score = db.Column(db.Float, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
+#Stimulation Engine Models
+
+from datetime import datetime
+from app import db  # same `db` instance used by your other models
+
+
+class DigitalTwinSession(db.Model):
+    __tablename__ = 'digital_twin_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    farmer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    crop_recommendation_id = db.Column(
+        db.Integer, db.ForeignKey('crop_recommendations.id'), nullable=True
+    )
+
+    crop_name = db.Column(db.String(64), nullable=False)
+    state_json = db.Column(db.JSON, nullable=False)          # full simulation state
+    status = db.Column(db.String(20), default='growing')     # growing | harvested | failed
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    farmer = db.relationship('User', backref=db.backref('digital_twin_sessions', lazy=True))
+
+    def to_summary(self):
+        return {
+            'id': self.id,
+            'crop': self.crop_name,
+            'status': self.status,
+            'simulationDay': (self.state_json or {}).get('simulationDay'),
+            'cropHealth': (self.state_json or {}).get('cropHealth'),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 
 class MandiPrice(db.Model):
     __tablename__ = "mandi_prices"

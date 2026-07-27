@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}3D {{ crop|title }} Simulation - THALIR{% endblock %}
+
+{% block extra_head %}
+<style>
+  .simulation-shell { max-width:none; margin:0 auto; padding:1.25rem; }
+  .simulation-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .simulation-header h1 { margin:0; color:#102a1b; font-size:clamp(1.65rem, 3vw, 2.5rem); font-weight:900; letter-spacing:-.05em; }
+  .simulation-header p { margin:.3rem 0 0; color:#5c6e63; }
+  .sim-back { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1rem; color:#14532d; background:#fff; border:1px solid #d7e7d8; border-radius:12px; font-weight:800; text-decoration:none; }
+  .simulation-grid { display:grid; grid-template-columns:minmax(0, 1.85fr) minmax(280px, .85fr); gap:1rem; height:calc(100dvh - 9.5rem); min-height:540px; }
+  .sim-canvas-wrap { position:relative; min-width:0; min-height:0; overflow:hidden; border-radius:24px; background:linear-gradient(#9bd5ff 0%, #e7f6ff 57%, #7bb958 58%, #5e9a42 100%); box-shadow:0 20px 45px rgba(15, 55, 27, .16); }
+  #cropSimulationCanvas { position:absolute; inset:0; display:block; width:100%; height:100%; cursor:grab; touch-action:none; }
+  #cropSimulationCanvas:active { cursor:grabbing; }
+  .sim-hint, .sim-stage { position:absolute; z-index:2; border-radius:999px; background:rgba(255,255,255,.88); box-shadow:0 6px 18px rgba(30,61,40,.12); backdrop-filter:blur(8px); }
+  .sim-hint { bottom:1rem; left:1rem; padding:.55rem .75rem; color:#385143; font-size:.78rem; font-weight:700; }
+  .sim-stage { top:1rem; left:1rem; padding:.6rem .85rem; color:#14532d; font-size:.82rem; font-weight:900; }
+  .sim-panel { min-height:0; overflow:auto; padding:1.1rem; border:1px solid #dce8dc; border-radius:24px; background:#fff; box-shadow:0 12px 30px rgba(15,55,27,.07); }
+  .sim-panel h2 { margin:0 0:.9rem; font-size:1.05rem; color:#173a24; font-weight:900; }
+  .sim-progress { height:.6rem; overflow:hidden; border-radius:999px; background:#e7efe7; }
+  .sim-progress > div { height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#35a34a,#0c7b4b); transition:width .25s ease; }
+  .sim-growth { display:flex; justify-content:space-between; margin:.6rem 0 .35rem; color:#4d6554; font-size:.88rem; font-weight:700; }
+  .sim-actions { display:grid; grid-template-columns:repeat(3, 1fr); gap:.6rem; margin:1.25rem 0; }
+  .sim-button { border:0; border-radius:12px; padding:.75rem .45rem; cursor:pointer; font-weight:900; color:#fff; background:#167a3e; transition:transform .15s ease, filter .15s ease; }
+  .sim-button:hover { transform:translateY(-1px); filter:brightness(1.05); }
+  .sim-button.secondary { color:#17422a; background:#e6f3e7; }
+  .sim-button.water { background:#1677bb; }
+  .sim-control { padding-top:1rem; margin-top:1rem; border-top:1px solid #e5eee5; }
+  .sim-control label { display:flex; justify-content:space-between; margin-bottom:.55rem; color:#385143; font-size:.86rem; font-weight:800; }
+  .sim-control input { width:100%; accent-color:#167a3e; }
+  .sim-stats { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-top:1.2rem; }
+  .sim-stat { padding:.8rem; border-radius:14px; background:#f4f9f3; }
+  .sim-stat span { display:block; color:#718176; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+  .sim-stat strong { display:block; margin-top:.22rem; color:#173a24; font-size:1rem; }
+  .twin-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-top:1.1rem; }
+  .twin-input label { display:block; color:#526756; font-size:.73rem; font-weight:800; }
+  .twin-input input { width:100%; box-sizing:border-box; margin-top:.28rem; padding:.48rem; border:1px solid #d6e5d7; border-radius:9px; color:#183a25; }
+  .twin-run { width:100%; margin-top:.85rem; padding:.8rem; border:0; border-radius:12px; background:#153f2a; color:#fff; cursor:pointer; font-weight:900; }
+  .xai-panel { margin-top:1rem; padding-top:1rem; border-top:1px solid #e5eee5; }
+  .xai-copy { margin:.35rem 0 .7rem; color:#5b6f60; font-size:.82rem; line-height:1.45; }
+  .shap-row { display:grid; grid-template-columns:82px 1fr 45px; gap:.45rem; align-items:center; margin:.38rem 0; color:#4c6352; font-size:.77rem; }
+  .shap-track { height:.5rem; overflow:hidden; border-radius:999px; background:#edf2ed; }
+  .shap-bar { height:100%; border-radius:inherit; background:#1c9a51; }
+  .shap-bar.negative { background:#df604b; }
+  .waterfall { display:flex; align-items:flex-end; gap:.28rem; height:4.2rem; margin:.8rem 0; padding:.35rem; border-radius:10px; background:#f6faf6; }
+  .waterfall-column { flex:1; min-width:0; border-radius:4px 4px 0 0; background:#249552; }
+  .waterfall-column.negative { background:#d6614e; }
+  .xai-factors { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.8rem; font-size:.76rem; }
+  .xai-factors div { padding:.6rem; border-radius:10px; background:#f4f9f3; color:#395640; }
+  @media (max-width:900px) { .simulation-grid { grid-template-columns:1fr; height:auto; min-height:0; } .sim-canvas-wrap { height:min(66dvh, 620px); min-height:430px; } .sim-panel { overflow:visible; } }
+  @media (max-width:600px) { .simulation-shell { padding:.85rem; } .simulation-header { align-items:flex-start; flex-direction:column-reverse; } .sim-canvas-wrap { height:58dvh; min-height:360px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="simulation-shell">
+  <header class="simulation-header">
+    <div>
+      <h1>{{ crop|title }} Growth Simulation</h1>
+      <p>Explore a living 3D crop model and control its growth conditions.</p>
+    </div>
+    <a class="sim-back" href="{{ url_for('farmer.crop_recommendation') }}"><i class="fas fa-arrow-left"></i> Crop Advisor</a>
+  </header>
+
+  <section class="simulation-grid">
+    <div class="sim-canvas-wrap" id="simulationViewport">
+      <div class="sim-stage" id="simulationStage">Seedling stage</div>
+      <canvas id="cropSimulationCanvas" aria-label="Interactive 3D {{ crop|title }} crop simulation"></canvas>
+      <div class="sim-hint"><i class="fas fa-hand-pointer"></i> Drag to rotate · Scroll to zoom</div>
+    </div>
+    <aside class="sim-panel">
+      <h2>Simulation controls</h2>
+      <div class="sim-growth"><span>Growth progress</span><strong id="growthValue">0%</strong></div>
+      <div class="sim-progress"><div id="growthProgress"></div></div>
+      <div class="sim-actions">
+        <button class="sim-button" id="simPlay" type="button"><i class="fas fa-play"></i> Grow</button>
+        <button class="sim-button secondary" id="simPause" type="button"><i class="fas fa-pause"></i> Pause</button>
+        <button class="sim-button water" id="simWater" type="button"><i class="fas fa-droplet"></i> Water</button>
+      </div>
+      <div class="sim-control">
+        <label for="sunlightControl"><span>Sunlight</span><span id="sunlightValue">75%</span></label>
+        <input id="sunlightControl" type="range" min="20" max="100" value="75">
+      </div>
+      <div class="sim-control">
+        <label for="growthControl"><span>Growth day</span><span id="dayValue">Day 1</span></label>
+        <input id="growthControl" type="range" min="0" max="100" value="0">
+      </div>
+      <div class="sim-stats">
+        <div class="sim-stat"><span>Crop</span><strong id="cropName">{{ crop|title }}</strong></div>
+        <div class="sim-stat"><span>Health</span><strong id="healthValue">Healthy</strong></div>
+        <div class="sim-stat"><span>Water level</span><strong id="waterValue">65%</strong></div>
+        <div class="sim-stat"><span>Season</span><strong id="seasonValue">Growing</strong></div>
+      </div>
+      <div class="twin-inputs" id="twinInputs">
+        <div class="twin-input"><label>Temperature °C<input name="temperature" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Humidity %<input name="humidity" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Rainfall mm<input name="rainfall" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Soil pH<input name="ph" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Nitrogen<input name="nitrogen" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Phosphorus<input name="phosphorus" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Potassium<input name="potassium" type="number" step="0.1"></label></div>
+        <div class="twin-input"><label>Irrigation<input name="irrigation" type="number" step="0.1" value="0"></label></div>
+      </div>
+      <button class="twin-run" id="runWhatIf" type="button"><i class="fas fa-wand-magic-sparkles"></i> Run What-If Analysis</button>
+      <section class="xai-panel" aria-live="polite">
+        <h2>Explainable AI (SHAP)</h2>
+        <p class="xai-copy" id="xaiSummary">Run the simulation to see feature-level explanations.</p>
+        <div id="shapBars"></div>
+        <div class="xai-copy"><strong>SHAP waterfall</strong></div><div class="waterfall" id="shapWaterfall"></div>
+        <div class="xai-factors"><div><strong>Positive factors</strong><br><span id="positiveFactors">—</span></div><div><strong>Negative factors</strong><br><span id="negativeFactors">—</span></div></div>
+      </section>
+    </aside>
+  </section>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>window.THALIR_SIMULATION_CROP = {{ crop|tojson }};</script>
+<script src="{{ url_for('static', filename='js/three-scene.js') }}"></script>
+{% endblock %}

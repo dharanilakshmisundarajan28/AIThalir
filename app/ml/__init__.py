@@ -30,7 +30,7 @@ def load_model():
     return model, scaler, feature_columns
 
 def get_crop_recommendation(nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall):
-    """Get crop recommendation based on soil and weather parameters"""
+    """Return up to three crops, ordered by Random Forest probability."""
     
     model, scaler, features = load_model()
     
@@ -44,14 +44,18 @@ def get_crop_recommendation(nitrogen, phosphorus, potassium, temperature, humidi
     # Scale features
     input_scaled = scaler.transform(input_data)
     
-    # Get prediction and probability
-    prediction = model.predict(input_scaled)[0]
     probabilities = model.predict_proba(input_scaled)[0]
-    confidence = max(probabilities)
+    top_indices = np.argsort(probabilities)[-3:][::-1]
+    recommendations = [
+        {
+            'crop': str(model.classes_[index]),
+            'probability': round(float(probabilities[index]) * 100, 2)
+        }
+        for index in top_indices
+    ]
     
     return {
-        'crop': prediction,
-        'confidence': float(confidence),
+        'recommendations': recommendations,
         'parameters': {
             'nitrogen': nitrogen,
             'phosphorus': phosphorus,
@@ -64,34 +68,34 @@ def get_crop_recommendation(nitrogen, phosphorus, potassium, temperature, humidi
     }
 
 def get_fallback_recommendation(n, p, k, temp, humidity, ph, rainfall):
-    """Fallback rule-based recommendation system"""
+    """Return fallback crops when the trained model is unavailable."""
     
     # Simple rule-based recommendations
     if temp > 25 and humidity > 70 and rainfall > 200:
         crop = "Rice"
-        confidence = 0.85
     elif temp > 20 and temp < 30 and humidity > 60 and rainfall > 100:
         crop = "Maize"
-        confidence = 0.80
     elif temp > 18 and temp < 28 and humidity < 70 and rainfall < 100:
         crop = "Wheat"
-        confidence = 0.75
     elif n > 80 and p > 60 and k > 70:
         crop = "Sugarcane"
-        confidence = 0.70
     elif temp > 25 and humidity > 50 and ph < 7.0:
         crop = "Cotton"
-        confidence = 0.72
     elif temp < 25 and humidity > 60 and rainfall > 150:
         crop = "Tea"
-        confidence = 0.78
     else:
         crop = "Vegetables (Mixed)"
-        confidence = 0.65
+    fallback_crops = [crop] + [
+        candidate for candidate in ('Rice', 'Maize', 'Wheat', 'Cotton', 'Sugarcane', 'Tea')
+        if candidate != crop
+    ][:2]
+    fallback_probabilities = (85.0, 10.0, 5.0)
     
     return {
-        'crop': crop,
-        'confidence': confidence,
+        'recommendations': [
+            {'crop': candidate, 'probability': probability}
+            for candidate, probability in zip(fallback_crops, fallback_probabilities)
+        ],
         'parameters': {
             'nitrogen': n,
             'phosphorus': p,

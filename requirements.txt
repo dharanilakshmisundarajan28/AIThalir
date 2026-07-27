@@ -7,7 +7,7 @@ WTForms==3.1.1
 python-dotenv==1.0.0
 requests==2.31.0
 pandas==2.1.4
-numpy==1.24.3
+numpy==1.26.4
 scikit-learn==1.3.2
 joblib==1.3.2
 google-generativeai==0.3.2
@@ -15,3 +15,10 @@ kagglehub==0.2.2
 Pillow==10.1.0
 email-validator==2.1.0
 gunicorn==21.2.0
+shap==0.48.0
+scipy==1.16.1
+simpy==4.1.1
+plotly==6.3.0
+matplotlib==3.10.3
+pydantic==2.11.7
+xgboost==3.0.4

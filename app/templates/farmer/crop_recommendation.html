@@ -210,6 +210,59 @@
     color: #0f172a;
   }
 
+  .recommendation-list {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .recommendation-option {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem;
+    border: 1px solid #dbe8dc;
+    border-radius: 14px;
+    background: #fafffa;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+
+  .recommendation-option:hover,
+  .recommendation-option:focus-visible {
+    border-color: #86c991;
+    outline: none;
+    transform: translateY(-1px);
+  }
+
+  .recommendation-option.is-selected {
+    border-color: #86c991;
+    background: #eff9ee;
+  }
+
+  .recommendation-rank {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: #dcecdc;
+    color: #1f5f20;
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+
+  .recommendation-option.is-selected .recommendation-rank {
+    background: #1f7a32;
+    color: #fff;
+  }
+
+  .recommendation-name { font-weight: 900; color: #0f172a; }
+  .recommendation-probability { font-size: 0.88rem; font-weight: 900; color: #1f7a32; }
+
   .roadmap-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -453,7 +506,23 @@
     .tech-grid {
       grid-template-columns: 1fr;
     }
+
   }
+
+  .btn-simulation {
+    background: linear-gradient(145deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 0.95rem 1.4rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 0 #163ea5, 0 14px 24px rgba(37,99,235,.35);
+    transition: all .15s ease;
+  }
+
+  .btn-simulation:hover { transform: translateY(-2px); box-shadow: 0 10px 0 #163ea5, 0 18px 28px rgba(37,99,235,.4); }
+  .btn-simulation:active { transform: translateY(6px); box-shadow: 0 2px 0 #163ea5, 0 5px 10px rgba(37,99,235,.3); }
 </style>
 {% endblock %}
 
@@ -532,15 +601,31 @@
           <div id="recommendationResult" class="stack-gap"></div>
 
           <div class="footer-actions">
-            <button type="button" class="btn-ghost inline-flex items-center gap-2" onclick="showFormView()">
-              <i class="fas fa-arrow-left"></i>
-              Back
+            <button
+                type="button"
+                class="btn-ghost inline-flex items-center gap-2"
+                onclick="showFormView()">
+                <i class="fas fa-arrow-left"></i>
+                  Back
             </button>
-            <button type="button" class="btn-primary inline-flex items-center gap-2" onclick="createPlan()">
+
+            <!-- New 3D Simulation Button -->
+            <button
+                type="button"
+                class="btn-simulation inline-flex items-center gap-2"
+                onclick="startSimulation()">
+                <i class="fas fa-play-circle"></i>
+                3D Simulation
+            </button>
+
+            <button
+              type="button"
+              class="btn-primary inline-flex items-center gap-2"
+              onclick="createPlan()">
               <i class="fas fa-clipboard-list"></i>
               Go with this plan
             </button>
-          </div>
+        </div>
 
         </div>
       </div>
@@ -582,6 +667,12 @@ const cropImages = {
 };
 
 let lastRecommendation = null;
+let recommendationState = {
+  recommendations: [],
+  economicsByCrop: {},
+  parameters: {},
+  selectedIndex: 0
+};
 
 function showFormView() {
   document.getElementById('resultView').classList.add('hidden');
@@ -890,7 +981,7 @@ async function getLiveWeather() {
   }
 }
 
-function buildResultMarkup(rec, economics) {
+function buildResultMarkup(rec, economics, recommendations = [], parameters = {}, selectedIndex = 0) {
   const acreage = Number(economics.acreage || 1);
   const yieldPerAcreKg = Number(economics.yield_per_acre_kg || 0);
   const totalYieldKg = Number(economics.expected_yield_kg || (yieldPerAcreKg * acreage));
@@ -902,8 +993,11 @@ function buildResultMarkup(rec, economics) {
   const profile = cropProfile(rec.crop);
   const imageUrl = pickImage(rec.crop);
 
+  const rankedRecommendations = recommendations.length ? recommendations : [rec];
+  const inputParameters = Object.keys(parameters).length ? parameters : (rec.parameters || {});
+
   document.getElementById('resultTitle').textContent = `${cropLabel(rec.crop)} - Crop Details`;
-  document.getElementById('resultSubtle').textContent = 'Suitable crop selected for your farm. Values may vary by season and practices.';
+  document.getElementById('resultSubtle').textContent = `Recommendation #${selectedIndex + 1} (${Number(rec.probability || 0).toFixed(1)}% match). Values may vary by season and practices.`;
 
   document.getElementById('recommendationResult').innerHTML = `
     <div class="result-grid">
@@ -917,10 +1011,23 @@ function buildResultMarkup(rec, economics) {
         </div>
 
         <div class="summary-card">
-          Suitable crop: <strong>${rec.crop}</strong>.
+          Selected crop: <strong>${cropLabel(rec.crop)}</strong> (${Number(rec.probability || 0).toFixed(1)}%).
           Expected yield = <strong>${totalYieldKg.toLocaleString()} kg</strong>
           (<strong>${totalYieldTons.toFixed(2)} tons</strong>) and expected income = <strong>${formatCurrency(expectedIncome)}</strong>.
           <div class="muted-note">Expected yield and income are estimates and may vary with weather, irrigation, and farm practices.</div>
+        </div>
+
+        <div class="panel p-4">
+          <div class="section-title mb-3"><i class="fas fa-list-ol text-emerald-700"></i> Top Crop Recommendations</div>
+          <div class="recommendation-list">
+            ${rankedRecommendations.map((option, index) => `
+              <button type="button" class="recommendation-option ${index === selectedIndex ? 'is-selected' : ''}" onclick="showRecommendation(${index})" aria-pressed="${index === selectedIndex}">
+                <span class="recommendation-rank">${index + 1}</span>
+                <span class="recommendation-name">${cropLabel(option.crop)}</span>
+                <span class="recommendation-probability">${Number(option.probability || 0).toFixed(1)}%</span>
+              </button>
+            `).join('')}
+          </div>
         </div>
       </div>
 
@@ -1000,7 +1107,7 @@ function buildResultMarkup(rec, economics) {
             <div class="h-2.5 rounded-full" style="background:#eef2ee;overflow:hidden;">
               <div class="h-2.5 rounded-full" style="width:62%; background:#1f7a32;"></div>
             </div>
-            <div class="mt-2 text-xs text-slate-500">Your current pH: <span style="font-weight:900;color:#166534">${rec.parameters.ph} (input)</span></div>
+            <div class="mt-2 text-xs text-slate-500">Your current pH: <span style="font-weight:900;color:#166534">${inputParameters.ph ?? '—'} (input)</span></div>
           </div>
 
           <div class="tech-grid mt-5">
@@ -1029,6 +1136,31 @@ function buildResultMarkup(rec, economics) {
       </div>
     </div>
   `;
+}
+
+function startSimulation() {
+  const crop = recommendationState.recommendations[recommendationState.selectedIndex];
+  if (!crop) {
+    toast('Choose a crop recommendation before starting the simulation.');
+    return;
+  }
+  window.location.href = `/farmer/simulation?crop=${encodeURIComponent(crop.crop)}`;
+}
+
+function showRecommendation(index) {
+  const { recommendations, economicsByCrop, parameters } = recommendationState;
+  const selectedRecommendation = recommendations[index];
+
+  if (!selectedRecommendation) return;
+
+  recommendationState.selectedIndex = index;
+  buildResultMarkup(
+    selectedRecommendation,
+    economicsByCrop[selectedRecommendation.crop] || {},
+    recommendations,
+    parameters,
+    index
+  );
 }
 
 function createPlan() {
@@ -1065,7 +1197,15 @@ document.getElementById('recommendationForm').addEventListener('submit', async (
     }
 
     lastRecommendation = result;
-    buildResultMarkup(result.recommendation, result.economics || {});
+    recommendationState = {
+      recommendations: result.recommendations || [result.recommendation],
+      economicsByCrop: result.economics_by_crop || {
+        [result.recommendation.crop]: result.economics || {}
+      },
+      parameters: result.parameters || {},
+      selectedIndex: 0
+    };
+    showRecommendation(0);
     showResultView();
   } catch (error) {
     toast(error.message || 'Error getting recommendation');

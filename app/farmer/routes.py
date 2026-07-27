@@ -3,6 +3,9 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import User, CropRecommendation, MandiPrice, ChatHistory, GovernmentScheme, SchemeApplication, Product, Order, OrderItem, CartItem
 from app.ml import get_crop_recommendation
+from app.digital_twin.crop_catalog import CROP_CATALOG, get_crop_catalog, normalise_crop
+from app.digital_twin import simulation_engine as twin_engine
+from app.digital_twin.explainability import analyse_crop
 import requests
 import re
 import os
@@ -703,15 +706,33 @@ def crop_recommendation():
             recommendation = get_crop_recommendation(
                 nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall
             )
-            crop_economics = _get_crop_economics(recommendation.get('crop'))
-            yield_per_acre_kg = float(crop_economics['yield_per_acre'])
-            price_per_kg = float(crop_economics['price_per_kg'])
-            cost_per_acre = float(crop_economics['cost_per_acre'])
-            expected_yield_kg = yield_per_acre_kg * acreage
-            expected_yield_tons = expected_yield_kg / 1000.0
-            expected_income = expected_yield_kg * price_per_kg
-            expected_cost = cost_per_acre * acreage
-            expected_profit = expected_income - expected_cost
+            recommendations = recommendation['recommendations']
+            top_recommendation = recommendations[0]
+
+            def build_economics(crop_name):
+                crop_economics = _get_crop_economics(crop_name)
+                yield_per_acre_kg = float(crop_economics['yield_per_acre'])
+                price_per_kg = float(crop_economics['price_per_kg'])
+                cost_per_acre = float(crop_economics['cost_per_acre'])
+                expected_yield_kg = yield_per_acre_kg * acreage
+                expected_income = expected_yield_kg * price_per_kg
+                expected_cost = cost_per_acre * acreage
+                return {
+                    'acreage': acreage,
+                    'yield_per_acre_kg': yield_per_acre_kg,
+                    'price_per_kg': price_per_kg,
+                    'cost_per_acre': cost_per_acre,
+                    'expected_yield_kg': expected_yield_kg,
+                    'expected_yield_tons': expected_yield_kg / 1000.0,
+                    'expected_income': expected_income,
+                    'expected_cost': expected_cost,
+                    'expected_profit': expected_income - expected_cost,
+                }
+
+            economics_by_crop = {
+                item['crop']: build_economics(item['crop']) for item in recommendations
+            }
+            economics = economics_by_crop[top_recommendation['crop']]
             
             save_warning = None
             try:
@@ -724,8 +745,8 @@ def crop_recommendation():
                     humidity=humidity,
                     ph=ph,
                     rainfall=rainfall,
-                    recommended_crop=recommendation['crop'],
-                    confidence_score=recommendation['confidence']
+                    recommended_crop=top_recommendation['crop'],
+                    confidence_score=top_recommendation['probability'] / 100
                 )
                 db.session.add(crop_rec)
                 db.session.commit()
@@ -735,18 +756,11 @@ def crop_recommendation():
 
             return jsonify({
                 'success': True,
-                'recommendation': recommendation,
-                'economics': {
-                    'acreage': acreage,
-                    'yield_per_acre_kg': yield_per_acre_kg,
-                    'price_per_kg': price_per_kg,
-                    'cost_per_acre': cost_per_acre,
-                    'expected_yield_kg': expected_yield_kg,
-                    'expected_yield_tons': expected_yield_tons,
-                    'expected_income': expected_income,
-                    'expected_cost': expected_cost,
-                    'expected_profit': expected_profit,
-                },
+                'recommendations': recommendations,
+                'recommendation': top_recommendation,
+                'parameters': recommendation['parameters'],
+                'economics': economics,
+                'economics_by_crop': economics_by_crop,
                 'save_warning': save_warning
             })
             
@@ -754,6 +768,85 @@ def crop_recommendation():
             return jsonify({'success': False, 'error': str(e)}), 400
     
     return render_template('farmer/crop_recommendation.html')
+
+
+@bp.route('/simulation')
+@login_required
+def simulation():
+    """Render the interactive 3D view for the crop selected in Crop Advisor."""
+    guard = _require_farmer()
+    if guard:
+        return guard
+
+    crop = (request.args.get('crop') or 'crop').strip()
+    return render_template('farmer/simulation.html', crop=crop)
+
+
+def _twin_inputs(payload, crop):
+    """Coerce simulation inputs while retaining crop-aware useful defaults."""
+    cfg = get_crop_catalog(crop)
+    defaults = {
+        'nitrogen': cfg['ideal_npk']['n'], 'phosphorus': cfg['ideal_npk']['p'],
+        'potassium': cfg['ideal_npk']['k'], 'temperature': sum(cfg['temp_ideal_range']) / 2,
+        'humidity': 65, 'rainfall': 100, 'ph': 6.5, 'irrigation': 0,
+    }
+    result = {}
+    for key, default in defaults.items():
+        try:
+            result[key] = float(payload.get(key, default))
+        except (TypeError, ValueError):
+            result[key] = default
+    return result
+
+
+@bp.route('/simulation-data')
+@login_required
+def simulation_data():
+    """Initial catalogue entry and the latest recommendation inputs for the twin."""
+    guard = _require_farmer()
+    if guard:
+        return guard
+    crop = normalise_crop(request.args.get('crop'))
+    cfg = get_crop_catalog(crop)
+    latest = CropRecommendation.query.filter_by(farmer_id=current_user.id).order_by(CropRecommendation.created_at.desc()).first()
+    source = {
+        'nitrogen': latest.nitrogen if latest else cfg['ideal_npk']['n'],
+        'phosphorus': latest.phosphorus if latest else cfg['ideal_npk']['p'],
+        'potassium': latest.potassium if latest else cfg['ideal_npk']['k'],
+        'temperature': latest.temperature if latest else sum(cfg['temp_ideal_range']) / 2,
+        'humidity': latest.humidity if latest else 65, 'rainfall': latest.rainfall if latest else 100,
+        'ph': latest.ph if latest else 6.5,
+    }
+    return jsonify({'success': True, 'crop': crop, 'config': cfg, 'inputs': _twin_inputs(source, crop), 'supported_crops': list(CROP_CATALOG)})
+
+
+@bp.route('/simulate', methods=['POST'])
+@login_required
+def simulate_crop_twin():
+    """Run a stateless what-if update and return visual, yield, and XAI data."""
+    guard = _require_farmer()
+    if guard:
+        return guard
+    payload = request.get_json(silent=True) or request.form
+    crop = normalise_crop(payload.get('crop'))
+    inputs = _twin_inputs(payload, crop)
+    state = twin_engine.new_state(crop, inputs)
+    day = max(0, min(int(float(payload.get('day', 0) or 0)), state['durationDays']))
+    state['simulationDay'] = day
+    twin_engine.apply_conditions(state, inputs)
+    explanation = analyse_crop(crop, inputs)
+    return jsonify({'success': True, 'crop': crop, 'config': get_crop_catalog(crop), 'state': state, 'inputs': inputs, 'explanation': explanation})
+
+
+@bp.route('/shap-analysis', methods=['POST'])
+@login_required
+def shap_analysis():
+    guard = _require_farmer()
+    if guard:
+        return guard
+    payload = request.get_json(silent=True) or request.form
+    crop = normalise_crop(payload.get('crop'))
+    return jsonify({'success': True, 'explanation': analyse_crop(crop, _twin_inputs(payload, crop))})
 
 @bp.route('/mandi-prices')
 @login_required
