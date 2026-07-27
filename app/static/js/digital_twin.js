@@ -39,6 +39,8 @@
   let playing = false;
   let playTimer = null;
   let currentState = null;
+  let activeLifecycle = null;
+  let plantingDate = null;
 
   // ---------- THREE.JS SETUP ----------
   function initScene() {
@@ -149,8 +151,9 @@
   function updatePlantVisuals(state) {
     const maturity = state.maturityPercent / 100; // 0..1
     const health = state.cropHealth / 100; // 0..1
-
-    const scaleY = 0.3 + maturity * 2.2;
+    const lifecycle = getCropLifecycle(state.crop || window.DT_CROP || 'rice');
+    const progress = state.simulationDay / lifecycle.duration;
+    const scaleY = 0.3 + Math.max(0.05, Math.min(1, progress)) * 2.2;
     let color = new THREE.Color(0x22c55e); // healthy green
     if (health < 0.65) color = new THREE.Color(0xca8a04); // stressed yellow
     if (health < 0.35) color = new THREE.Color(0x92400e); // damaged brown
@@ -212,14 +215,22 @@
   // ---------- UI / STATE SYNC ----------
   function renderState(state) {
     currentState = state;
+    const lifecycle = getCropLifecycle(state.crop || window.DT_CROP || 'rice');
+    const currentDay = Math.max(0, Math.min(state.simulationDay || 0, lifecycle.duration));
+    const stage = getStageForDay(state.crop || window.DT_CROP || 'rice', currentDay);
+    const progressPct = getProgressPercent(state.crop || window.DT_CROP || 'rice', currentDay);
+    const remainingDays = getDaysRemaining(state.crop || window.DT_CROP || 'rice', currentDay);
+    const harvestDate = getHarvestDate(state.crop || window.DT_CROP || 'rice', plantingDate || new Date());
 
-    document.getElementById('dtDay').textContent = state.simulationDay;
-    document.getElementById('dtDuration').textContent = state.durationDays;
-    document.getElementById('dtTimelineFill').style.width =
-      Math.min(100, (state.simulationDay / state.durationDays) * 100) + '%';
+    document.getElementById('dtDay').textContent = currentDay;
+    document.getElementById('dtDuration').textContent = lifecycle.duration;
+    document.getElementById('dtTimelineFill').style.width = Math.min(100, progressPct) + '%';
 
-    document.getElementById('dtStage').textContent = state.growthStage;
-    document.getElementById('dtMaturity').textContent = state.maturityPercent + '%';
+    document.getElementById('dtStage').textContent = stage.name;
+    document.getElementById('dtTimelineStage').textContent = stage.name;
+    document.getElementById('dtDaysRemaining').textContent = remainingDays;
+    document.getElementById('dtHarvestDate').textContent = harvestDate;
+    document.getElementById('dtMaturity').textContent = progressPct + '%';
     document.getElementById('dtHealth').textContent = state.cropHealth + '%';
 
     document.getElementById('dtMoisture').textContent = Math.round(state.soilMoisture) + '%';
@@ -309,10 +320,12 @@
     if (playing) return;
     playing = true;
     const speed = parseInt(document.getElementById('dtSpeedSelect').value, 10) || 1;
+    const lifecycle = getCropLifecycle(window.DT_CROP || 'rice');
+    const interval = Math.max(180, Math.round(1200 / (lifecycle.animationSpeed * speed)));
     playTimer = setInterval(() => {
       if (currentState && currentState.status !== 'growing') { stopPlaying(); return; }
       advanceDay(speed);
-    }, 1200);
+    }, interval);
   });
   document.getElementById('dtPauseBtn').addEventListener('click', stopPlaying);
   document.getElementById('dtNextDayBtn').addEventListener('click', () => advanceDay(1));

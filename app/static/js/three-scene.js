@@ -109,15 +109,25 @@
   for (let i = 0; i < 220; i++) { const drop = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .25, 4), new THREE.MeshBasicMaterial({ color: 0x82caff, transparent: true, opacity: .72 })); drop.position.set((Math.random() - .5) * 24, Math.random() * 10, (Math.random() - .5) * 24); drop.visible = false; rain.add(drop); }
 
   let progress = 0, water = 65, playing = false, rainingUntil = 0, expectedYield = null, twinStage = null;
-  function stageFor(value) { return value < 24 ? 'Seedling stage' : value < 55 ? 'Vegetative stage' : value < 82 ? 'Flowering stage' : 'Harvest-ready stage'; }
+  let currentLifecycle = getCropLifecycle(crop);
+  let plantingDate = null;
+  function stageFor(value) {
+    const stage = getStageForDay(crop, Math.round((value / 100) * currentLifecycle.duration));
+    return `${stage.name}`;
+  }
   function updateScene() {
-    const scale = .18 + progress / 100 * .82;
+    const safeProgress = Math.min(100, Math.max(0, progress));
+    const day = Math.max(0, Math.round((safeProgress / 100) * currentLifecycle.duration));
+    const stageInfo = getStageForDay(crop, day);
+    const scale = .18 + safeProgress / 100 * .82;
     plants.forEach(({ group, phase }) => { group.scale.setScalar(scale); group.rotation.z = Math.sin(performance.now() / 900 + phase) * .018; });
-    fruits.forEach(fruit => { fruit.visible = progress >= 58; });
-    ui.progress.style.width = `${progress}%`; ui.growth.textContent = expectedYield === null ? `${Math.round(progress)}%` : `${Math.round(progress)}% · ${Math.round(expectedYield).toLocaleString()} kg`;
-    ui.day.textContent = `Day ${Math.max(1, Math.round(1 + progress * 1.2))}`; ui.stage.textContent = twinStage || stageFor(progress);
+    fruits.forEach(fruit => { fruit.visible = safeProgress >= 58; });
+    ui.progress.style.width = `${safeProgress}%`; ui.growth.textContent = expectedYield === null ? `${Math.round(safeProgress)}%` : `${Math.round(safeProgress)}% · ${Math.round(expectedYield).toLocaleString()} kg`;
+    ui.day.textContent = `Day ${day || 0}/${currentLifecycle.duration}`; ui.stage.textContent = twinStage || stageInfo.name;
     ui.water.textContent = `${Math.round(water)}%`; ui.health.textContent = water < 28 ? 'Needs water' : 'Healthy';
-    ui.growthSlider.value = progress;
+    ui.growthSlider.value = safeProgress;
+    document.getElementById('daysRemainingValue').textContent = `${Math.max(0, currentLifecycle.duration - day)} days`;
+    document.getElementById('harvestDateValue').textContent = getHarvestDate(crop, plantingDate || new Date());
   }
   function resize() {
     const rect = viewport.getBoundingClientRect();
@@ -161,6 +171,8 @@
 
   function applyTwinResult(result) {
     const state = result.state;
+    const lifecycle = getCropLifecycle(state.crop || crop);
+    currentLifecycle = lifecycle;
     progress = state.maturityPercent;
     water = state.soilMoisture;
     expectedYield = state.expectedYieldKg;
@@ -168,11 +180,13 @@
     leafMaterial.color.set(state.cropHealth < 45 ? 0xb5a329 : colors[0]);
     ui.health.textContent = `${Math.round(state.cropHealth)}% healthy`;
     document.getElementById('seasonValue').textContent = state.growthStage;
+    document.getElementById('daysRemainingValue').textContent = `${Math.max(0, lifecycle.duration - (state.simulationDay || 0))} days`;
+    document.getElementById('harvestDateValue').textContent = getHarvestDate(state.crop || crop, plantingDate || new Date());
     updateScene(); renderExplanation(result.explanation);
   }
 
   async function runSimulation() {
-    const payload = { crop, day: Math.round(progress / 100 * 180), ...currentInputs() };
+    const payload = { crop, day: Math.round((progress / 100) * currentLifecycle.duration), ...currentInputs() };
     try {
       const response = await fetch('/farmer/simulate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await response.json();

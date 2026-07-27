@@ -21,6 +21,9 @@
         <h3>Simulation Timeline</h3>
         <div class="dt-timeline-label">Day <span id="dtDay">0</span> / <span id="dtDuration">120</span></div>
         <div class="dt-timeline-bar"><div id="dtTimelineFill" class="dt-timeline-fill"></div></div>
+        <div class="dt-kv"><span>Current Growth Stage</span><strong id="dtTimelineStage">-</strong></div>
+        <div class="dt-kv"><span>Days Remaining</span><strong id="dtDaysRemaining">-</strong></div>
+        <div class="dt-kv"><span>Harvest Date</span><strong id="dtHarvestDate">-</strong></div>
         <div class="dt-timeline-controls">
           <button id="dtPlayBtn">▶ Play</button>
           <button id="dtPauseBtn">⏸ Pause</button>
@@ -115,6 +118,7 @@
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="{{ url_for('static', filename='js/crop_config.js') }}"></script>
 <script>
   window.DT_SESSION_ID = {{ session_id }};
   window.DT_CROP = {{ crop|tojson }};
