@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Digital Twin Simulator - {{ crop_display_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dts-shell { max-width: 1280px; margin: 0 auto; }
+
+  .dts-glass {
+    background: rgba(255,255,255,.95);
+    border: 1px solid rgba(148,163,184,.16);
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(15,23,42,.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .dts-view { display: none; }
+  .dts-view.active { display: block; }
+
+  .dts-stepper {
+    display: flex; flex-wrap: wrap; gap: .75rem; margin: .15rem 0 .25rem;
+  }
+  .step-pill {
+    display: inline-flex; align-items: center; gap: .45rem; padding: .7rem .95rem;
+    border-radius: 999px; background: #f8fafc; color: #64748b; font-size: .82rem; font-weight: 800;
+    border: 1px solid #e2e8f0;
+  }
+  .step-pill.active {
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4); color: #166534; border-color: #86efac;
+  }
+
+  .scenario-option {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    border: 1px solid #e2e8f0; border-radius: 16px; padding: .85rem 1rem; margin-bottom: .6rem;
+    cursor: pointer; transition: all .2s ease; background: #fff;
+  }
+  .scenario-option:hover { border-color: #86c991; transform: translateY(-1px); }
+  .scenario-option.selected { border-color: #16a34a; background: linear-gradient(90deg, #f0fdf4, #ecfdf5); }
+  .scenario-option input[type="radio"] { accent-color: #16a34a; width: 1.05rem; height: 1.05rem; }
+  .scenario-name { font-weight: 800; color: #0f172a; font-size: .95rem; }
+  .scenario-desc { font-size: .8rem; color: #64748b; margin-top: .15rem; }
+  .scenario-pct-select {
+    border: 1px solid #d1d5db; border-radius: 10px; padding: .42rem .6rem; font-weight: 700;
+    font-size: .85rem; color: #0f172a; background: #fff;
+  }
+  .ai-note {
+    display: flex; gap: .6rem; align-items: flex-start; background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 16px; padding: .9rem 1rem; font-size: .85rem; color: #78350f; margin: 1rem 0;
+  }
+  .adv-toggle {
+    display: inline-flex; align-items: center; gap: .4rem; font-size: .82rem; font-weight: 800;
+    color: #0f766e; cursor: pointer; margin: .8rem 0 .25rem;
+  }
+  .adv-panel { display: none; margin-top: .6rem; }
+  .adv-panel.open { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .9rem; }
+  .param-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: .8rem .95rem; background: linear-gradient(180deg, #fcfdff, #f8fafc); }
+  .param-card label { display: flex; justify-content: space-between; font-size: .8rem; font-weight: 800; color: #334155; margin-bottom: .35rem; }
+  .param-card input[type="range"] { width: 100%; accent-color: #16a34a; }
+  .param-card .param-value { color: #16a34a; }
+  .param-card .param-tip { font-size: .72rem; color: #94a3b8; margin-top: .35rem; line-height: 1.3; cursor: help; }
+
+  .btn-run {
+    background: linear-gradient(135deg, #16a34a, #0f766e); color: #fff; border: 0; border-radius: 16px;
+    padding: .95rem 1.2rem; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 12px 24px rgba(22,163,74,.25);
+  }
+  .btn-run:hover { transform: translateY(-1px); }
+  .btn-secondary {
+    background: #eef2f7; color: #0f172a; border: 0; border-radius: 14px; padding: .8rem 1.1rem;
+    font-weight: 700; cursor: pointer;
+  }
+
+  .info-stack { display: grid; gap: .7rem; }
+  .info-card {
+    border: 1px solid #e2e8f0; border-radius: 16px; padding: .9rem 1rem; background: #f8fafc;
+  }
+  .mini-pill {
+    display: inline-block; padding: .28rem .6rem; border-radius: 999px; background: #dcfce7; color: #166534;
+    font-size: .72rem; font-weight: 800; margin-bottom: .45rem;
+  }
+  .summary-card {
+    border: 1px solid #ccfbf1; border-radius: 16px; padding: .8rem 1rem;
+    background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+  }
+  .summary-row {
+    display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .45rem 0; border-top: 1px solid #d1fae5;
+    font-size: .84rem; color: #334155;
+  }
+  .summary-row:first-child { border-top: 0; }
+  .summary-row strong { color: #0f172a; font-weight: 800; }
+
+  .impact-kpi { border: 1px solid #e2e8f0; border-radius: 16px; padding: 1rem; text-align: center; background: #fff; }
+  .impact-kpi .kpi-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; font-weight: 800; }
+  .impact-kpi .kpi-value { font-size: 1.45rem; font-weight: 900; color: #0f172a; margin-top: .2rem; }
+  .kpi-delta { font-size: .8rem; font-weight: 800; margin-top: .15rem; }
+  .kpi-delta.up { color: #16a34a; } .kpi-delta.down { color: #dc2626; }
+  .risk-badge { display: inline-block; padding: .3rem .7rem; border-radius: 9999px; font-size: .78rem; font-weight: 800; }
+  .risk-Low { background: #dcfce7; color: #166534; }
+  .risk-Medium { background: #fef3c7; color: #92400e; }
+  .risk-High { background: #fee2e2; color: #991b1b; }
+
+  .impact-card {
+    border: 1px solid #e2e8f0; border-radius: 16px; padding: .95rem 1rem; background: #fcfdff;
+  }
+  .impact-row { display: flex; justify-content: space-between; align-items: center; padding: .55rem 0; border-top: 1px solid #f1f5f9; font-size: .88rem; }
+  .impact-row:first-child { border-top: 0; }
+  .impact-tag { font-weight: 800; }
+  .impact-tag.High { color: #dc2626; } .impact-tag.Moderate { color: #d97706; } .impact-tag.Low { color: #16a34a; }
+
+  .suggestion-box {
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1px solid #a7f3d0; border-radius: 16px; padding: .9rem 1rem; margin-top: .8rem;
+  }
+
+  .explain-list { list-style: none; margin: 0; padding: 0; }
+  .explain-list li { padding: .6rem 0 .6rem 1.15rem; position: relative; font-size: .88rem; color: #334155; border-top: 1px solid #f1f5f9; }
+  .explain-list li:first-child { border-top: 0; }
+  .explain-list li::before { content: "\2022"; position: absolute; left: 0; color: #16a34a; font-weight: 900; }
+
+  .field-wrap {
+    position: relative; border-radius: 26px; overflow: hidden; min-height: 420px;
+    background: linear-gradient(180deg, #bfe5ff 0%, #eaf8ff 30%, #8ec96f 30%, #5f9a49 100%);
+    box-shadow: 0 20px 45px rgba(15,55,27,.18);
+  }
+  .field-wrap::before {
+    content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top, rgba(255,255,255,.4), transparent 48%);
+    pointer-events: none;
+  }
+  .field-water {
+    position: absolute; inset: auto 0 0 0; height: 24%; background: linear-gradient(180deg, rgba(132,204,252,.5), rgba(59,130,246,.25));
+    border-top: 2px solid rgba(255,255,255,.4);
+  }
+  .field-soil {
+    position: absolute; inset: 56% 0 0 0; background: linear-gradient(180deg, #946c33, #603f1e);
+    opacity: .35;
+  }
+  .field-rows { position: absolute; inset: 16% 7% 12% 7%; display: grid; grid-template-rows: repeat(5, 1fr); gap: 8px; z-index: 2; }
+  .field-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; }
+  .plant {
+    width: 100%; aspect-ratio: 1/1.25; border-radius: 40% 40% 20% 20%; position: relative; box-shadow: inset 0 -8px 12px rgba(0,0,0,.12);
+    background: linear-gradient(180deg, #4d8b34, #2e6b26);
+  }
+  .plant::before, .plant::after {
+    content: ""; position: absolute; background: inherit; border-radius: 999px;
+  }
+  .plant::before {
+    width: 68%; height: 30%; left: 52%; top: -6%; transform: rotate(-12deg);
+  }
+  .plant::after {
+    width: 56%; height: 24%; left: 24%; top: 8%; transform: rotate(22deg);
+  }
+  .plant.good { background: linear-gradient(180deg, #4d8b34, #2e6b26); }
+  .plant.moderate { background: linear-gradient(180deg, #caa34d, #9b7a22); }
+  .plant.stressed { background: linear-gradient(180deg, #b15a3a, #8a3f26); }
+  .field-legend {
+    position: absolute; top: .8rem; left: .8rem; background: rgba(255,255,255,.92); border-radius: 14px;
+    padding: .65rem .8rem; font-size: .74rem; font-weight: 700; color: #334155; box-shadow: 0 8px 18px rgba(15,23,42,.12); z-index: 3;
+  }
+  .field-legend .dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 9999px; margin-right: .3rem; }
+  .dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .7rem; margin-top: 1rem; }
+  .dash-kpi { border-radius: 14px; background: #f8fafc; padding: .8rem; text-align: center; border: 1px solid #e2e8f0; }
+  .dash-kpi .v { font-weight: 900; font-size: 1.08rem; color: #0f172a; }
+  .dash-kpi .l { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; font-weight: 800; margin-top: .15rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-5">
+  <div class="dts-shell space-y-4">
+    <div class="dts-glass p-5">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Digital Twin</div>
+          <h1 class="text-2xl md:text-3xl font-black text-slate-900">{{ crop_display_name }} Scenario Simulator</h1>
+          <p class="mt-1 text-sm text-slate-600">Explore field conditions before you act, with clear explanations of how each change affects crop growth and farm profitability.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <div class="step-pill active" data-step-pill="viewParameters">1. Configure scenario</div>
+          <div class="step-pill" data-step-pill="viewImpact">2. Review impact</div>
+          <a href="{{ url_for('farmer.crop_recommendation') }}" class="btn-secondary">&larr; Crop Advisor</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewParameters" class="dts-view active grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
+      <div class="dts-glass p-5">
+        <h2 class="text-lg font-extrabold text-slate-900 mb-1">Select a realistic scenario</h2>
+        <p class="text-sm text-slate-500 mb-4">Choose a farm situation on the left, then fine-tune the key parameters to understand how the crop responds.</p>
+
+        <div id="scenarioList">
+          {% for key, s in scenarios.items() %}
+          <label class="scenario-option {{ 'selected' if key == 'baseline' else '' }}" data-scenario="{{ key }}">
+            <div class="flex items-center gap-3">
+              <input type="radio" name="scenario" value="{{ key }}" {{ 'checked' if key == 'baseline' else '' }}>
+              <div>
+                <div class="scenario-name">{{ s.label }}</div>
+                <div class="scenario-desc">{{ s.description }}</div>
+              </div>
+            </div>
+            {% if s.adjustable %}
+            <select class="scenario-pct-select" data-scenario-pct="{{ key }}">
+              {% for opt in s.options %}
+              <option value="{{ opt }}" {{ 'selected' if opt == s.default else '' }}>{{ '%+d'|format(opt) }}%</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="adv-toggle" id="advToggle"><i class="fas fa-sliders"></i> Advanced parameters</div>
+        <div class="adv-panel" id="advPanel">
+          {% for p in core_parameters %}
+          <div class="param-card">
+            <label>{{ p.label }} <span class="param-value" data-param-out="{{ p.key }}"></span></label>
+            <input type="range" min="{{ p.min }}" max="{{ p.max }}" step="0.1" data-param="{{ p.key }}" data-param-label="{{ p.label }}" data-param-unit="">
+            <div class="param-tip" title="{{ p.tooltip }}">{{ p.tooltip }}</div>
+          </div>
+          {% endfor %}
+          {% for p in proxy_parameters %}
+          <div class="param-card">
+            <label>{{ p.label }} <span class="param-value" data-param-out="{{ p.key }}">{{ p.default }}{{ p.unit }}</span></label>
+            <input type="range" min="{{ p.min }}" max="{{ p.max }}" step="0.1" value="{{ p.default }}" data-param="{{ p.key }}" data-param-label="{{ p.label }}" data-param-unit="{{ p.unit }}">
+            <div class="param-tip" title="{{ p.tooltip }}">{{ p.tooltip }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="ai-note">
+          <i class="fas fa-lightbulb mt-0.5"></i>
+          <div>The simulator explains how weather, water and nutrition changes could affect yield, profit and crop risk before you decide.</div>
+        </div>
+
+        <button class="btn-run" id="runSimulationBtn"><i class="fas fa-play mr-2"></i>Run Simulation</button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="dts-glass p-5">
+          <div class="mini-pill">Crop intelligence</div>
+          <h3 class="font-bold text-slate-900 mb-2">Why this crop matters</h3>
+          <p class="text-sm text-slate-600">The digital twin uses the crop’s ideal growth range to explain what happens when conditions move away from the baseline.</p>
+          <div class="info-stack mt-3">
+            <div class="info-card">
+              <div class="font-semibold text-slate-800">Balanced nutrition</div>
+              <div class="text-sm text-slate-600 mt-1">Nitrogen, phosphorus and potassium all influence canopy growth, root strength and stress tolerance.</div>
+            </div>
+            <div class="info-card">
+              <div class="font-semibold text-slate-800">Water-smart decisions</div>
+              <div class="text-sm text-slate-600 mt-1">The simulator flags moisture stress early so farmers can choose irrigation or soil care actions.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dts-glass p-5">
+          <div class="mini-pill">Live summary</div>
+          <h3 class="font-bold text-slate-900 mb-2">Your scenario snapshot</h3>
+          <div class="summary-card" id="scenarioSummary"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewImpact" class="dts-view">
+      <div class="dts-glass p-5">
+        <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div class="text-sm font-bold text-emerald-700">Scenario outcome</div>
+            <h2 class="text-xl font-black text-slate-900">Result for <span id="impactScenarioLabel"></span></h2>
+          </div>
+          <div class="text-sm text-slate-500">The results below combine farm data, crop health and explainable AI reasoning.</div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-3 my-4">
+          <div class="impact-kpi">
+            <div class="kpi-label">Expected Yield</div>
+            <div class="kpi-value"><span id="impactYield"></span> t/acre</div>
+            <div class="kpi-delta" id="impactYieldDelta"></div>
+          </div>
+          <div class="impact-kpi">
+            <div class="kpi-label">Expected Profit</div>
+            <div class="kpi-value">₹<span id="impactProfit"></span></div>
+            <div class="kpi-delta" id="impactProfitDelta"></div>
+          </div>
+          <div class="impact-kpi">
+            <div class="kpi-label">Risk Level</div>
+            <div class="kpi-value"><span id="impactRisk" class="risk-badge"></span></div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+          <div class="space-y-3">
+            <div class="impact-card">
+              <h3 class="font-extrabold text-slate-900 mb-2">Impact overview</h3>
+              <div id="impactOverview"></div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="impact-card">
+              <h3 class="font-extrabold text-slate-900 mb-2">How the changed parameters affect the crop</h3>
+              <div id="parameterExplainList"></div>
+            </div>
+            <div class="impact-card">
+              <h3 class="font-extrabold text-slate-900 mb-2">Explainable AI reasoning</h3>
+              <ul class="explain-list" id="explainList"></ul>
+            </div>
+            <div class="suggestion-box hidden" id="suggestionBox">
+              <div class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-700 mb-1"><i class="fas fa-robot mr-1"></i>AI Suggestion</div>
+              <div class="text-sm font-semibold text-emerald-900" id="suggestionText"></div>
+              <div class="text-xs text-emerald-700 mt-1" id="suggestionImprovement"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 md:flex-row mt-5">
+          <button class="btn-run" id="viewDashboardBtn" style="flex:1;">View Field Dashboard</button>
+          <button class="btn-secondary" id="open3dBtn" style="flex:1;">Open 3D Simulation</button>
+          <button class="btn-secondary" id="tryAnotherBtn" style="flex:1;">Try Another Scenario</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewDashboard" class="dts-view">
+      <div class="dts-glass p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-sm font-bold text-emerald-700">Scenario: <span id="dashScenarioLabel"></span></div>
+          <div class="text-xs text-slate-400">Last Updated: Today</div>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+          <div class="field-wrap" id="fieldWrap">
+            <div class="field-water"></div>
+            <div class="field-soil"></div>
+            <div class="field-legend">
+              <div><span class="dot" style="background:#2c6b28"></span>Good</div>
+              <div><span class="dot" style="background:#a3821f"></span>Moderate</div>
+              <div><span class="dot" style="background:#8a3f26"></span>Stressed</div>
+            </div>
+            <div class="field-rows" id="fieldRows"></div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="impact-card">
+              <h3 class="font-extrabold text-slate-900 mb-2">Field outlook</h3>
+              <div id="dashboardNarrative"></div>
+            </div>
+            <div class="dash-kpis">
+              <div class="dash-kpi"><div class="v" id="dashHealth"></div><div class="l">Crop Health</div></div>
+              <div class="dash-kpi"><div class="v" id="dashYield"></div><div class="l">Expected Yield</div></div>
+              <div class="dash-kpi"><div class="v" id="dashProfit"></div><div class="l">Expected Profit</div></div>
+              <div class="dash-kpi"><div class="v" id="dashWaterStress"></div><div class="l">Water Stress</div></div>
+              <div class="dash-kpi"><div class="v" id="dashNextIrrigation"></div><div class="l">Next Irrigation</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-5">
+          <button class="btn-secondary" id="backToImpactBtn" style="flex:1;">Back to Result</button>
+          <button class="btn-run" id="runAgainBtn" style="flex:1;">Run Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CROP = {{ crop|tojson }};
+const SCENARIOS = {{ scenarios|tojson }};
+
+function showView(id) {
+  document.querySelectorAll('.dts-view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.step-pill').forEach((pill) => {
+    const shouldBeActive = pill.dataset.stepPill === id || (id === 'viewDashboard' && pill.dataset.stepPill === 'viewImpact');
+    pill.classList.toggle('active', shouldBeActive);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.scenario-option').forEach((opt) => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.scenario-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input[type="radio"]').checked = true;
+    updateScenarioSummary();
+  });
+});
+
+document.getElementById('advToggle').addEventListener('click', () => {
+  document.getElementById('advPanel').classList.toggle('open');
+});
+
+document.querySelectorAll('[data-param]').forEach((input) => {
+  const out = document.querySelector(`[data-param-out="${input.dataset.param}"]`);
+  const update = () => {
+    if (out) out.textContent = `${input.value}${input.dataset.paramUnit || ''}`;
+    updateScenarioSummary();
+  };
+  input.addEventListener('input', update);
+  update();
+});
+
+function collectOverrides() {
+  const overrides = {};
+  document.querySelectorAll('[data-param]').forEach((input) => {
+    if (input.value !== '') overrides[input.dataset.param] = input.value;
+  });
+  return overrides;
+}
+
+function selectedScenario() {
+  const checked = document.querySelector('input[name="scenario"]:checked');
+  const key = checked ? checked.value : 'baseline';
+  const pctSelect = document.querySelector(`[data-scenario-pct="${key}"]`);
+  return { key, pct: pctSelect ? Number(pctSelect.value) : null };
+}
+
+function paramNarrative(key, value) {
+  const map = {
+    temperature: `Temperature is set to ${value}°C, which strongly influences growth pace and flowering window.`,
+    soilMoisture: `Soil moisture is at ${value}%, affecting water stress and root health.`,
+    nitrogen: `Nitrogen is adjusted to ${value}, which changes leaf growth and canopy vigor.`,
+    phosphorus: `Phosphorus is adjusted to ${value}, helping root establishment and early crop strength.`,
+    potassium: `Potassium is adjusted to ${value}, improving plant resilience and grain fill.`,
+    pH: `Soil pH is set to ${value}, which influences nutrient availability.`,
+    humidity: `Humidity is set to ${value}%, impacting disease pressure and transpiration.`,
+    rainfall: `Rainfall is set to ${value} mm, which shifts the irrigation need.`,
+  };
+  return map[key] || `The ${key.replace(/([A-Z])/g, ' $1').toLowerCase()} setting is now ${value}, which changes crop conditions in the simulator.`;
+}
+
+function updateScenarioSummary() {
+  const { key, pct } = selectedScenario();
+  const scenarioMeta = SCENARIOS[key] || {};
+  const rows = Array.from(document.querySelectorAll('[data-param]')).map((input) => {
+    const label = input.dataset.paramLabel || input.dataset.param;
+    return `<div class="summary-row"><span>${label}</span><strong>${input.value}${input.dataset.paramUnit || ''}</strong></div>`;
+  });
+  const summary = document.getElementById('scenarioSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <div class="summary-row"><span>Scenario</span><strong>${scenarioMeta.label || key}</strong></div>
+      <div class="summary-row"><span>Adjustment</span><strong>${pct !== null ? `${pct > 0 ? '+' : ''}${pct}%` : 'Baseline'}</strong></div>
+      ${rows.join('')}
+    `;
+  }
+}
+
+let lastResult = null;
+
+async function runSimulation() {
+  const { key, pct } = selectedScenario();
+  const btn = document.getElementById('runSimulationBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Simulating...';
+
+  try {
+    const response = await fetch('/digital-twin/api/scenario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crop: CROP, scenario: key, pct, overrides: collectOverrides(), acreage: 1 })
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error || 'Simulation failed');
+    lastResult = data.result;
+    renderImpact(lastResult);
+    renderDashboard(lastResult);
+    showView('viewImpact');
+  } catch (error) {
+    alert(error.message || 'Could not run simulation');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play mr-2"></i>Run Simulation';
+  }
+}
+
+function pctLabel(el, value) {
+  el.textContent = `${value > 0 ? '+' : ''}${value}%`;
+  el.className = 'kpi-delta ' + (value >= 0 ? 'up' : 'down');
+}
+
+function renderImpact(r) {
+  const label = r.scenario_pct !== null && r.scenario_pct !== undefined
+    ? `${r.scenario_label} (${r.scenario_pct > 0 ? '+' : ''}${r.scenario_pct}%)`
+    : r.scenario_label;
+  document.getElementById('impactScenarioLabel').textContent = label;
+  document.getElementById('dashScenarioLabel').textContent = label;
+
+  document.getElementById('impactYield').textContent = r.expected_yield_per_acre;
+  document.getElementById('impactProfit').textContent = Number(r.expected_profit).toLocaleString();
+  pctLabel(document.getElementById('impactYieldDelta'), r.deltas.yield_pct);
+  pctLabel(document.getElementById('impactProfitDelta'), r.deltas.profit_pct);
+
+  const riskEl = document.getElementById('impactRisk');
+  riskEl.textContent = r.risk_level;
+  riskEl.className = `risk-badge risk-${r.risk_level}`;
+
+  const overview = [
+    ['Water Stress', r.water_stress],
+    ['Crop Health', r.crop_health_category],
+    ['Disease Risk', r.disease_risk_category],
+    ['Market Demand', r.market_demand],
+  ];
+  document.getElementById('impactOverview').innerHTML = overview.map(([label, tag]) => `
+    <div class="impact-row"><span>${label}</span><span class="impact-tag ${tag}">${tag}</span></div>
+  `).join('');
+
+  const paramList = Array.from(document.querySelectorAll('[data-param]')).map((input) => {
+    const label = input.dataset.paramLabel || input.dataset.param;
+    return `<li><strong>${label}</strong><div>${paramNarrative(input.dataset.param, input.value)}</div></li>`;
+  });
+  document.getElementById('parameterExplainList').innerHTML = `<ul class="explain-list">${paramList.join('')}</ul>`;
+
+  document.getElementById('explainList').innerHTML = r.explanation.map(reason => `<li>${reason}</li>`).join('');
+
+  const suggestionBox = document.getElementById('suggestionBox');
+  if (r.ai_suggestion) {
+    suggestionBox.classList.remove('hidden');
+    document.getElementById('suggestionText').textContent = r.ai_suggestion.text;
+    document.getElementById('suggestionImprovement').textContent =
+      `Expected profit improvement: +${r.ai_suggestion.expected_profit_improvement_pct}%`;
+  } else {
+    suggestionBox.classList.add('hidden');
+  }
+}
+
+function renderDashboard(r) {
+  const rows = 5, cols = 12;
+  const goodCount = Math.round((r.good_area_percent / 100) * rows * cols);
+  let plants = [];
+  for (let i = 0; i < rows * cols; i++) {
+    if (i < goodCount) plants.push('good');
+    else if (i < goodCount + Math.round((rows * cols - goodCount) * 0.5)) plants.push('moderate');
+    else plants.push('stressed');
+  }
+  // shuffle a little so it doesn't look like hard bands
+  for (let i = plants.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [plants[i], plants[j]] = [plants[j], plants[i]];
+  }
+
+  let html = '';
+  for (let row = 0; row < rows; row++) {
+    html += '<div class="field-row">';
+    for (let col = 0; col < cols; col++) {
+      html += `<div class="plant ${plants[row * cols + col]}"></div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('fieldRows').innerHTML = html;
+
+  document.getElementById('dashHealth').textContent = r.crop_health_percent + '%';
+  document.getElementById('dashYield').textContent = r.expected_yield_per_acre + ' t/acre';
+  document.getElementById('dashProfit').textContent = '\u20b9' + Number(r.expected_profit).toLocaleString();
+  document.getElementById('dashWaterStress').textContent = r.water_stress;
+  document.getElementById('dashNextIrrigation').textContent = r.next_irrigation_days === 0 ? 'Now' : `In ${r.next_irrigation_days} Days`;
+  document.getElementById('dashboardNarrative').innerHTML = `
+    <div class="summary-row"><span>Crop outlook</span><strong>${r.crop_health_category}</strong></div>
+    <div class="summary-row"><span>Water demand</span><strong>${r.water_stress}</strong></div>
+    <div class="summary-row"><span>AI note</span><strong>${r.explanation[0] || 'Conditions remain manageable.'}</strong></div>
+  `;
+}
+
+document.getElementById('runSimulationBtn').addEventListener('click', runSimulation);
+document.getElementById('runAgainBtn').addEventListener('click', runSimulation);
+document.getElementById('viewDashboardBtn').addEventListener('click', () => showView('viewDashboard'));
+// document.getElementById('open3dBtn').addEventListener('click', () => {
+//   const crop = CROP || 'rice';
+//   window.location.href = `/farmer/simulation?crop=${encodeURIComponent(crop)}`;
+// });
+document.getElementById('backToImpactBtn').addEventListener('click', () => showView('viewImpact'));
+document.getElementById('tryAnotherBtn').addEventListener('click', () => showView('viewParameters'));
+
+updateScenarioSummary();
+</script>
+{% endblock %}

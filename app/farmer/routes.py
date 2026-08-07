@@ -782,6 +782,49 @@ def simulation():
     return render_template('farmer/simulation.html', crop=crop)
 
 
+@bp.route('/simulation-config')
+@login_required
+def simulation_config():
+    """Render the dedicated parameter configuration page before opening the 3D simulator."""
+    guard = _require_farmer()
+    if guard:
+        return guard
+
+    crop = request.args.get('crop')
+    latest_rec = CropRecommendation.query.filter_by(farmer_id=current_user.id) \
+        .order_by(CropRecommendation.created_at.desc()).first()
+    if not crop:
+        crop = latest_rec.recommended_crop if latest_rec else 'rice'
+
+    cfg = get_crop_catalog(crop)
+    crop_display_name = cfg.get('display_name', crop.title()) if cfg else crop.title()
+    initial_inputs = {
+        'rainfall': latest_rec.rainfall if latest_rec and latest_rec.rainfall is not None else 120,
+        'sunlight': 8,
+        'temperature': latest_rec.temperature if latest_rec and latest_rec.temperature is not None else 28,
+        'soilMoisture': 65,
+        'humidity': latest_rec.humidity if latest_rec and latest_rec.humidity is not None else 70,
+        'windSpeed': 12,
+        'ph': latest_rec.ph if latest_rec and latest_rec.ph is not None else 6.5,
+        'irrigation': 20,
+        'nitrogen': latest_rec.nitrogen if latest_rec and latest_rec.nitrogen is not None else cfg['ideal_npk']['n'],
+        'phosphorus': latest_rec.phosphorus if latest_rec and latest_rec.phosphorus is not None else cfg['ideal_npk']['p'],
+        'potassium': latest_rec.potassium if latest_rec and latest_rec.potassium is not None else cfg['ideal_npk']['k'],
+        'climateChange': 30,
+        'pestAttack': 15,
+        'diseaseSeverity': 12,
+        'weedDensity': 10,
+        'floodDroughtSeverity': 20,
+    }
+
+    return render_template(
+        'digital_twin/parameter_config.html',
+        crop=crop,
+        crop_display_name=crop_display_name,
+        initial_inputs=initial_inputs,
+    )
+
+
 def _twin_inputs(payload, crop):
     """Coerce simulation inputs while retaining crop-aware useful defaults."""
     cfg = get_crop_catalog(crop)

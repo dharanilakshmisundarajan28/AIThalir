@@ -1139,12 +1139,17 @@ function buildResultMarkup(rec, economics, recommendations = [], parameters = {}
 }
 
 function startSimulation() {
-  const crop = recommendationState.recommendations[recommendationState.selectedIndex];
-  if (!crop) {
-    toast('Choose a crop recommendation before starting the simulation.');
-    return;
-  }
-  window.location.href = `/farmer/simulation?crop=${encodeURIComponent(crop.crop)}`;
+    const crop = recommendationState.recommendations[recommendationState.selectedIndex];
+    if (!crop) {
+      toast('Choose a crop recommendation before starting the simulation.');
+      return;
+    }
+    alert("BUTTON CLICKED");
+
+    window.location.href = `/farmer/simulation-config?crop=${encodeURIComponent(crop.crop)}`;
+
+    // window.location.href = `/digital_twin/parameter-config?crop=${encodeURIComponent(crop.crop)}`;
+    // window.location.href = `/farmer/simulation-config?crop=${encodeURIComponent(crop.crop)}`;
 }
 
 function showRecommendation(index) {

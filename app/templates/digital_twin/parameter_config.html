@@ -1,0 +1,281 @@
+
+{% extends "base.html" %}
+
+{% block title %}Configure Scenario - {{ crop_display_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .param-shell { max-width: 1080px; margin: 0 auto; }
+  .param-card { border: 1px solid #d1d5db; border-radius: 24px; padding: 1.15rem; background: #fff; box-shadow: 0 20px 50px rgba(15,23,42,.06); }
+  .param-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .param-control { display: grid; gap: .75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 1rem; }
+  .param-control label { display: flex; justify-content: space-between; gap: .5rem; font-weight: 800; color: #0f172a; }
+  .param-control small { display: block; color: #64748b; margin-top: .15rem; }
+  .param-control input[type="range"] { width: 100%; accent-color: #16a34a; }
+  .param-control input[type="number"] { width: 100%; border: 1px solid #cbd5e1; border-radius: 12px; padding: .65rem .85rem; background: #fff; color: #0f172a; }
+  .help-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .75rem; border-radius: 999px; background: #ecfdf5; color: #166534; font-size: .78rem; font-weight: 700; }
+  .section-title { margin-bottom: 1rem; color: #0f172a; font-weight: 900; }
+  .run-button { display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 1rem 1.2rem; background: linear-gradient(135deg, #16a34a, #0f766e); color: white; border: none; border-radius: 18px; font-size: 1rem; font-weight: 900; cursor: pointer; }
+  .run-button:hover { transform: translateY(-1px); }
+  .run-button[disabled] { opacity: .7; cursor: wait; }
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .overview-card { background: #f8fafc; border: 1px solid #d1d5db; border-radius: 18px; padding: 1rem; }
+  .overview-card strong { display: block; margin-top: .65rem; color: #0f172a; }
+  .form-error { display: none; margin-top: .85rem; border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; border-radius: 14px; padding: .8rem 1rem; font-weight: 700; font-size: .88rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="color:red;font-size:40px">THIS IS DIGITAL TWIN PARAMETER PAGE</h1>
+<div class="py-8 px-4 param-shell">
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <div class="text-xs font-bold uppercase tracking-[0.25em] text-emerald-700">Digital Twin</div>
+      <h1 class="text-3xl font-black text-slate-900">Configure your {{ crop_display_name }} Scenario</h1>
+      <p class="mt-2 text-slate-600 max-w-2xl">Set the field and climate parameters before you launch the digital twin. Use the sliders to tune realistic values and then press Run Simulation.</p>
+    </div>
+    <a href="{{ url_for('farmer.crop_recommendation') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm hover:bg-slate-50">
+      <i class="fas fa-arrow-left text-emerald-700"></i> Back to Crop Advisor
+    </a>
+  </div>
+
+  <div class="param-card">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="section-title">Parameter Configuration</h2>
+        <p class="text-slate-600">These values represent the farm and weather conditions you want to test in the digital twin.</p>
+      </div>
+      <div class="help-pill">🌦 Scales are farmer-friendly and reflect realistic ranges</div>
+    </div>
+
+    <form id="scenarioForm" class="space-y-6">
+      <div class="param-group">
+        <div class="param-control">
+          <label for="rainfall">🌧 Rainfall <span id="rainfallLabel">120 cm</span></label>
+          <input type="range" id="rainfall" name="rainfall" min="1" max="200" step="1" value="120">
+          <input type="number" id="rainfallNumber" min="1" max="200" step="1" value="120">
+          <small>Rainfall during the season in centimeters.</small>
+        </div>
+        <div class="param-control">
+          <label for="sunlight">☀️ Sunlight Intensity <span id="sunlightLabel">8 hrs/day</span></label>
+          <input type="range" id="sunlight" name="sunlight" min="1" max="12" step="0.5" value="8">
+          <input type="number" id="sunlightNumber" min="1" max="12" step="0.5" value="8">
+          <small>Average daily sunlight hours. (Visual reference only - not yet modelled by the growth engine.)</small>
+        </div>
+        <div class="param-control">
+          <label for="temperature">🌡 Temperature <span id="temperatureLabel">28 °C</span></label>
+          <input type="range" id="temperature" name="temperature" min="10" max="45" step="0.5" value="28">
+          <input type="number" id="temperatureNumber" min="10" max="45" step="0.5" value="28">
+          <small>Average air temperature in degrees Celsius.</small>
+        </div>
+        <div class="param-control">
+          <label for="soilMoisture">💧 Soil Moisture <span id="soilMoistureLabel">65%</span></label>
+          <input type="range" id="soilMoisture" name="soilMoisture" min="5" max="100" step="1" value="65">
+          <input type="number" id="soilMoistureNumber" min="5" max="100" step="1" value="65">
+          <small>Soil moisture percentage.</small>
+        </div>
+      </div>
+
+      <div class="param-group">
+        <div class="param-control">
+          <label for="humidity">🌫 Humidity <span id="humidityLabel">70%</span></label>
+          <input type="range" id="humidity" name="humidity" min="10" max="100" step="1" value="70">
+          <input type="number" id="humidityNumber" min="10" max="100" step="1" value="70">
+          <small>Average air humidity percentage.</small>
+        </div>
+        <div class="param-control">
+          <label for="windSpeed">🌬 Wind Speed <span id="windSpeedLabel">12 km/h</span></label>
+          <input type="range" id="windSpeed" name="windSpeed" min="0" max="60" step="1" value="12">
+          <input type="number" id="windSpeedNumber" min="0" max="60" step="1" value="12">
+          <small>Average wind speed. (Visual reference only - not yet modelled by the growth engine.)</small>
+        </div>
+        <div class="param-control">
+          <label for="ph">🌱 Soil pH <span id="phLabel">6.5</span></label>
+          <input type="range" id="ph" name="ph" min="4.0" max="9.0" step="0.1" value="6.5">
+          <input type="number" id="phNumber" min="4.0" max="9.0" step="0.1" value="6.5">
+          <small>Soil acidity/alkalinity.</small>
+        </div>
+        <div class="param-control">
+          <label for="irrigation">🚰 Irrigation Level <span id="irrigationLabel">20%</span></label>
+          <input type="range" id="irrigation" name="irrigation" min="0" max="100" step="1" value="20">
+          <input type="number" id="irrigationNumber" min="0" max="100" step="1" value="20">
+          <small>Relative irrigation intensity.</small>
+        </div>
+      </div>
+
+      <div class="param-group">
+        <div class="param-control">
+          <label for="nitrogen">🧪 Nitrogen (N) <span id="nitrogenLabel">70 kg/acre</span></label>
+          <input type="range" id="nitrogen" name="nitrogen" min="0" max="160" step="1" value="70">
+          <input type="number" id="nitrogenNumber" min="0" max="160" step="1" value="70">
+          <small>Applied nitrogen per acre.</small>
+        </div>
+        <div class="param-control">
+          <label for="phosphorus">🧪 Phosphorus (P) <span id="phosphorusLabel">55 kg/acre</span></label>
+          <input type="range" id="phosphorus" name="phosphorus" min="0" max="100" step="1" value="55">
+          <input type="number" id="phosphorusNumber" min="0" max="100" step="1" value="55">
+          <small>Applied phosphorus per acre.</small>
+        </div>
+        <div class="param-control">
+          <label for="potassium">🧪 Potassium (K) <span id="potassiumLabel">60 kg/acre</span></label>
+          <input type="range" id="potassium" name="potassium" min="0" max="100" step="1" value="60">
+          <input type="number" id="potassiumNumber" min="0" max="100" step="1" value="60">
+          <small>Applied potassium per acre.</small>
+        </div>
+        <div class="param-control">
+          <label for="climateChange">🌍 Climate Stress <span id="climateChangeLabel">30%</span></label>
+          <input type="range" id="climateChange" name="climateChange" min="0" max="100" step="1" value="30">
+          <input type="number" id="climateChangeNumber" min="0" max="100" step="1" value="30">
+          <small>Higher values represent greater climate stress. (Visual reference only.)</small>
+        </div>
+      </div>
+
+      <div class="param-group">
+        <div class="param-control">
+          <label for="pestAttack">🐛 Pest Attack <span id="pestAttackLabel">15%</span></label>
+          <input type="range" id="pestAttack" name="pestAttack" min="0" max="100" step="1" value="15">
+          <input type="number" id="pestAttackNumber" min="0" max="100" step="1" value="15">
+          <small>Starting pest pressure on the crop.</small>
+        </div>
+        <div class="param-control">
+          <label for="diseaseSeverity">🍄 Disease Severity <span id="diseaseSeverityLabel">12%</span></label>
+          <input type="range" id="diseaseSeverity" name="diseaseSeverity" min="0" max="100" step="1" value="12">
+          <input type="number" id="diseaseSeverityNumber" min="0" max="100" step="1" value="12">
+          <small>Starting crop disease pressure level.</small>
+        </div>
+        <div class="param-control">
+          <label for="weedDensity">🌿 Weed Density <span id="weedDensityLabel">10%</span></label>
+          <input type="range" id="weedDensity" name="weedDensity" min="0" max="100" step="1" value="10">
+          <input type="number" id="weedDensityNumber" min="0" max="100" step="1" value="10">
+          <small>Relative weed pressure on the field. (Visual reference only.)</small>
+        </div>
+        <div class="param-control">
+          <label for="floodDroughtSeverity">🌊 Flood/Drought <span id="floodDroughtSeverityLabel">20%</span></label>
+          <input type="range" id="floodDroughtSeverity" name="floodDroughtSeverity" min="0" max="100" step="1" value="20">
+          <input type="number" id="floodDroughtSeverityNumber" min="0" max="100" step="1" value="20">
+          <small>Field water stress from floods or droughts. (Visual reference only.)</small>
+        </div>
+      </div>
+
+      <div class="mt-6 text-right">
+        <div id="runError" class="form-error"></div>
+        <button type="button" class="run-button" id="runSimulationBtn">Run Simulation</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="overview-grid mt-8">
+    <div class="overview-card">
+      <strong>Rainfall</strong>
+      <p class="text-slate-600">Use 1–200 cm to simulate low to high seasonal rainfall.</p>
+    </div>
+    <div class="overview-card">
+      <strong>Sunlight</strong>
+      <p class="text-slate-600">Choose 1–12 hours to reflect cloudy or bright field conditions.</p>
+    </div>
+    <div class="overview-card">
+      <strong>Nutrition</strong>
+      <p class="text-slate-600">Nitrogen / phosphorus / potassium range captures fertilizer strategy.</p>
+    </div>
+    <div class="overview-card">
+      <strong>Stress factors</strong>
+      <p class="text-slate-600">Pest and disease pressure seed the digital twin's starting risk before you launch it.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const initialInputs = {{ initial_inputs|tojson }};
+const inputPairs = [
+  { range: 'rainfall', number: 'rainfallNumber', label: 'rainfallLabel', suffix: ' cm' },
+  { range: 'sunlight', number: 'sunlightNumber', label: 'sunlightLabel', suffix: ' hrs/day' },
+  { range: 'temperature', number: 'temperatureNumber', label: 'temperatureLabel', suffix: ' °C' },
+  { range: 'soilMoisture', number: 'soilMoistureNumber', label: 'soilMoistureLabel', suffix: '%' },
+  { range: 'humidity', number: 'humidityNumber', label: 'humidityLabel', suffix: '%' },
+  { range: 'windSpeed', number: 'windSpeedNumber', label: 'windSpeedLabel', suffix: ' km/h' },
+  { range: 'ph', number: 'phNumber', label: 'phLabel', suffix: '' },
+  { range: 'irrigation', number: 'irrigationNumber', label: 'irrigationLabel', suffix: '%' },
+  { range: 'nitrogen', number: 'nitrogenNumber', label: 'nitrogenLabel', suffix: ' kg/acre' },
+  { range: 'phosphorus', number: 'phosphorusNumber', label: 'phosphorusLabel', suffix: ' kg/acre' },
+  { range: 'potassium', number: 'potassiumNumber', label: 'potassiumLabel', suffix: ' kg/acre' },
+  { range: 'climateChange', number: 'climateChangeNumber', label: 'climateChangeLabel', suffix: '%' },
+  { range: 'pestAttack', number: 'pestAttackNumber', label: 'pestAttackLabel', suffix: '%' },
+  { range: 'diseaseSeverity', number: 'diseaseSeverityNumber', label: 'diseaseSeverityLabel', suffix: '%' },
+  { range: 'weedDensity', number: 'weedDensityNumber', label: 'weedDensityLabel', suffix: '%' },
+  { range: 'floodDroughtSeverity', number: 'floodDroughtSeverityNumber', label: 'floodDroughtSeverityLabel', suffix: '%' },
+];
+
+function bindInput(pair) {
+  const range = document.getElementById(pair.range);
+  const number = document.getElementById(pair.number);
+  const label = document.getElementById(pair.label);
+  if (!range || !number || !label) return;
+  const initialValue = initialInputs[pair.range];
+  if (initialValue !== undefined) {
+    range.value = initialValue;
+  }
+  const update = (value) => {
+    const display = Number(value).toFixed(pair.range === 'ph' ? 1 : (pair.range === 'sunlight' ? 1 : 0));
+    label.textContent = `${display}${pair.suffix}`;
+    range.value = value;
+    number.value = display;
+  };
+  range.addEventListener('input', () => update(range.value));
+  number.addEventListener('input', () => update(number.value));
+  update(range.value);
+}
+
+inputPairs.forEach(bindInput);
+
+function collectValues() {
+  const values = {};
+  inputPairs.forEach(pair => {
+    const element = document.getElementById(pair.range);
+    if (element) values[pair.range] = element.value;
+  });
+  return values;
+}
+
+function showError(message) {
+  const box = document.getElementById('runError');
+  box.textContent = message;
+  box.style.display = 'block';
+}
+
+async function runSimulation() {
+
+  alert("runSimulation() called");
+
+    // const btn = document.getElementById('runSimulationBtn');
+  const btn = document.getElementById('runSimulationBtn');
+  const errorBox = document.getElementById('runError');
+  errorBox.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Starting simulation...';
+
+  const values = collectValues();
+  values.crop = '{{ crop }}';
+
+  try {
+    const response = await fetch('/digital-twin/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Could not start the simulation.');
+    }
+    window.location.href = `/digital-twin/simulator/${result.session_id}`;
+  } catch (error) {
+    showError(error.message || 'Could not start the simulation. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Run Simulation';
+  }
+}
+
+document.getElementById('runSimulationBtn').addEventListener('click', runSimulation);
+</script>
+{% endblock %}

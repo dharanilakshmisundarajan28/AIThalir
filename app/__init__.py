@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_babel import Babel, gettext
 from config import Config
+
+
 import os
 
 db = SQLAlchemy()
@@ -30,6 +32,10 @@ def create_app(config_class=Config):
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     # Register blueprints
+    
+
+    from app.digital_twin import bp as digital_twin_bp
+    app.register_blueprint(digital_twin_bp)
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp)
     

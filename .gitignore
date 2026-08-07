@@ -1,5 +1,6 @@
-__pycache__/
-instance/
-.env
-*.pyc
+.venv/
 venv/
+__pycache__/
+*.pyc
+.vscode/
+node_modules/

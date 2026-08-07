@@ -401,3 +401,4 @@ def run_headless_simulation(crop_name, farm_data, days=None, rng_seed=None):
         "waterUsedLitres": round(state["waterUsedLitres"], 1),
         "durationDays": cfg["duration_days"],
     }
+
