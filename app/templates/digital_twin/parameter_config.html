@@ -1,10 +1,16 @@
-
 {% extends "base.html" %}
 
 {% block title %}Configure Scenario - {{ crop_display_name }}{% endblock %}
 
 {% block extra_head %}
+
+
 <style>
+
+
+
+
+  
   .param-shell { max-width: 1080px; margin: 0 auto; }
   .param-card { border: 1px solid #d1d5db; border-radius: 24px; padding: 1.15rem; background: #fff; box-shadow: 0 20px 50px rgba(15,23,42,.06); }
   .param-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
@@ -26,15 +32,14 @@
 {% endblock %}
 
 {% block content %}
-<h1 style="color:red;font-size:40px">THIS IS DIGITAL TWIN PARAMETER PAGE</h1>
 <div class="py-8 px-4 param-shell">
   <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <div class="text-xs font-bold uppercase tracking-[0.25em] text-emerald-700">Digital Twin</div>
-      <h1 class="text-3xl font-black text-slate-900">Configure your {{ crop_display_name }} Scenario</h1>
-      <p class="mt-2 text-slate-600 max-w-2xl">Set the field and climate parameters before you launch the digital twin. Use the sliders to tune realistic values and then press Run Simulation.</p>
+     
+      <h1 class="scenario-title">Configure your {{ crop_display_name }} Scenario</h1>
+      <h3 class="mt-2 text-slate-600 max-w-2xl">Set the field and climate parameters before you launch the digital twin. Use the sliders to tune realistic values and then press Run Simulation.</h3>
     </div>
-    <a href="{{ url_for('farmer.crop_recommendation') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm hover:bg-slate-50">
+    <a href="{{ url_for('farmer.crop_recommendation') }}" class="back-farm-btn">
       <i class="fas fa-arrow-left text-emerald-700"></i> Back to Crop Advisor
     </a>
   </div>
@@ -42,8 +47,9 @@
   <div class="param-card">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
-        <h2 class="section-title">Parameter Configuration</h2>
-        <p class="text-slate-600">These values represent the farm and weather conditions you want to test in the digital twin.</p>
+        <h2 style="color: #1c3d0a; font-weight: bold;">Parameter Configuration</h2>
+
+        <p class="farm-description">These values represent the farm and weather conditions you want to test in the digital twin.</p>
       </div>
       <div class="help-pill">🌦 Scales are farmer-friendly and reflect realistic ranges</div>
     </div>
@@ -156,7 +162,7 @@
           <small>Field water stress from floods or droughts. (Visual reference only.)</small>
         </div>
       </div>
-
+      
       <div class="mt-6 text-right">
         <div id="runError" class="form-error"></div>
         <button type="button" class="run-button" id="runSimulationBtn">Run Simulation</button>
@@ -245,10 +251,6 @@ function showError(message) {
 }
 
 async function runSimulation() {
-
-  alert("runSimulation() called");
-
-    // const btn = document.getElementById('runSimulationBtn');
   const btn = document.getElementById('runSimulationBtn');
   const errorBox = document.getElementById('runError');
   errorBox.style.display = 'none';

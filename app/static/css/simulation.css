@@ -31,12 +31,196 @@ html,body{ height:100%; margin:0; background: linear-gradient(180deg,#F6FFF4 0%,
 .progress-bar-container{ height:12px; background: #eef6ef; border-radius:10px; overflow:hidden; }
 .progress-bar-fill{ height:100%; background:linear-gradient(90deg,#66bb6a,#2e7d32); transition:width .5s ease; }
 .action-toolbar{ display:flex; gap:10px; margin-top:6px; }
-.growth-table-card .growth-table{ width:100%; border-collapse:collapse; }
-.growth-table th{ text-align:left; padding:10px 8px; font-size:12px; color:#4a6d4a; }
+
+.growth-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 2px solid #2e7d32;
+    border-radius: 12px;
+    background: #ffffff;
+    font-family: Inter, sans-serif;
+}
+
+.growth-table thead {
+    background: linear-gradient(
+        135deg,
+        #1b5e20,
+        #2e7d32
+    );
+    color: #ffffff;
+}
+
+.growth-table th {
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.4px;
+    border-right: 1px solid rgba(255,255,255,0.35);
+}
+
+.growth-table th:last-child {
+    border-right: none;
+}
+
+.growth-table td {
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #214d2b;
+    border-top: 1px solid #b7d9b9;
+    border-right: 1px solid #b7d9b9;
+    background: #f7fff7;
+}
+
+.growth-table td:last-child {
+    border-right: none;
+}
+
+.growth-table tbody tr:nth-child(even) td {
+    background: #edf8ee;
+}
+
+.growth-table tbody tr:hover td {
+    background: #dff1e1;
+}
+
+.growth-table tr.row-active td {
+    background: linear-gradient(
+        135deg,
+        #2e7d32,
+        #43a047
+    );
+    color: #ffffff;
+    font-weight: 800;
+    font-style: italic;
+    border-color: #2e7d32;
+}
+
+.growth-table tr.row-complete td {
+    background: #c8e6c9;
+    color: #145a20;
+    font-weight: 800;
+}
+
+.growth-table tr.row-complete td:first-child::after {
+    content: " ✓";
+    font-style: normal;
+}
+/* .growth-table-card .growth-table{ width:100%; border-collapse:collapse; } */
+/* .growth-table th{ text-align:left; padding:10px 8px; font-size:12px; color:#4a6d4a; }
 .growth-table td{ padding:10px 8px; border-top:1px solid #eef4ea; }
-.growth-table tr.row-active{ background:linear-gradient(90deg,#2E7D32, #66BB6A); color:#fff; border-radius:6px; }
+.growth-table tr.row-active{ background:linear-gradient(90deg,#2E7D32, #66BB6A); color:#fff; border-radius:6px; } */
 .summary-card{ margin-top:18px; padding:16px; border-radius:12px; }
 .summary-header{ display:flex; gap:12px; align-items:center; }
 .summary-icon-box svg{ width:36px; height:36px; color:#2E7D32; }
 .summary-title{ margin:0; font-size:16px; }
 @media(max-width:980px){ .simulation-grid{ grid-template-columns: 1fr; } .simulation-right-column{ order:2; } }
+/* --- Dynamic Digital Twin additions (appended, nothing above removed) --- */
+.alerts-banner{ margin-bottom:12px; }
+.alert-pill{ display:flex; align-items:center; gap:8px; background:#fff7ed; border-left:3px solid #f59e0b; padding:8px 12px; border-radius:8px; font-size:13px; color:#7c4a03; margin-bottom:6px; }
+.alert-pill.harvest-ready{ background:#eafbe9; border-left-color:#2e7d32; color:#14532d; }
+
+.quick-stats-row{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 6px; }
+.quick-stat-chip{ flex:1; min-width:140px; background:#f6fbf5; border:1px solid #e1efe0; border-radius:10px; padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
+.quick-stat-chip span{ font-size:11px; color:#5b7f5b; text-transform:uppercase; letter-spacing:.04em; }
+.quick-stat-chip strong{ font-size:16px; color:#163d2a; }
+
+.action-buttons-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.action-chip{ border:none; border-radius:10px; padding:9px 14px; font-size:13px; font-weight:700; color:#fff; cursor:pointer; background:#2e7d32; }
+.action-chip.secondary{ background:#2563eb; }
+.action-chip.warn{ background:#ea580c; }
+.action-chip.danger{ background:#b91c1c; }
+.action-chip[disabled]{ opacity:.6; cursor:wait; }
+
+.growth-table tr.row-active td{ font-weight:700; }
+
+.dt-modal-overlay{ position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; }
+.dt-modal{ background:#fff; border-radius:16px; max-width:480px; width:100%; box-shadow:0 30px 60px rgba(0,0,0,.25); }
+.dt-modal-header{ display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid #eef2ef; }
+.dt-modal-header h3{ margin:0; font-size:16px; color:#163d2a; }
+.dt-modal-close{ border:none; background:none; font-size:22px; line-height:1; cursor:pointer; color:#64748b; }
+.dt-modal-body{ padding:16px 18px; max-height:60vh; overflow-y:auto; }
+.dt-explain-list{ list-style:none; margin:10px 0 0; padding:0; }
+.dt-explain-list li{ display:flex; justify-content:space-between; gap:10px; padding:6px 8px; border-radius:8px; background:#f8fafc; font-size:13px; margin-bottom:6px; }
+.dt-explain-list li .factor-positive{ color:#16a34a; font-weight:700; }
+.dt-explain-list li .factor-negative{ color:#dc2626; font-weight:700; }
+
+.harvest-report-row{ display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid #eef2ef; font-size:14px; }
+.harvest-report-row:first-child{ border-top:0; }
+/* --- Dynamic Digital Twin additions v2 (farming color palette) --- */
+:root{
+  --leaf-green:#2e7d32; --leaf-green-dark:#1b5e20; --leaf-green-light:#e8f5e9;
+  --soil-brown:#7c5c39; --soil-brown-dark:#5d452b;
+  --wheat-gold:#d9a441; --wheat-gold-dark:#b3812c;
+  --terracotta:#c15a3a; --terracotta-dark:#9c452c;
+  --sky-teal:#0f766e; --sky-teal-dark:#0b5b55;
+}
+
+.top-controls .btn{ color:#fff; }
+.btn-explain{ background: linear-gradient(135deg, var(--sky-teal), var(--sky-teal-dark)); }
+.btn-select-crop{ background: linear-gradient(135deg, var(--leaf-green), var(--leaf-green-dark)); text-decoration:none; }
+.btn-change-params{ background: linear-gradient(135deg, var(--soil-brown), var(--soil-brown-dark)); text-decoration:none; }
+.top-controls .btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+
+.action-toolbar .btn{ color:#fff; }
+.btn-grow-week{ background: linear-gradient(135deg, var(--leaf-green), var(--leaf-green-dark)); }
+.btn-run-full{ background: linear-gradient(135deg, var(--wheat-gold), var(--wheat-gold-dark)); }
+.btn-pause{ background: linear-gradient(135deg, #6b7280, #4b5563); }
+.btn-reset{ background: linear-gradient(135deg, var(--terracotta), var(--terracotta-dark)); }
+.action-toolbar .btn[disabled]{ opacity:.55; cursor:wait; transform:none; }
+
+.alerts-banner{ margin-bottom:12px; }
+.alert-pill{ display:flex; align-items:center; gap:8px; background:#fff7ed; border-left:3px solid var(--wheat-gold); padding:8px 12px; border-radius:8px; font-size:13px; color:#7c4a03; margin-bottom:6px; }
+.alert-pill.harvest-ready{ background:var(--leaf-green-light); border-left-color:var(--leaf-green-dark); color:var(--leaf-green-dark); font-weight:700; }
+
+.quick-stats-row{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 6px; }
+.quick-stat-chip{ flex:1; min-width:140px; background:#f6fbf5; border:1px solid #e1efe0; border-radius:10px; padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
+.quick-stat-chip span{ font-size:11px; color:#5b7f5b; text-transform:uppercase; letter-spacing:.04em; }
+.quick-stat-chip strong{ font-size:16px; color:#163d2a; }
+.quick-stat-chip.highlight-chip{ background: linear-gradient(135deg, #fff8e8, #fdf1d6); border-color: var(--wheat-gold); }
+.quick-stat-chip.highlight-chip strong{ color: var(--wheat-gold-dark); font-size:18px; }
+
+.week-jump-row{ display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.week-jump-row label{ font-size:12px; font-weight:700; color:#4a6d4a; text-transform:uppercase; letter-spacing:.05em; }
+.week-jump-row select{ border:1px solid #cfe3cc; border-radius:8px; padding:6px 10px; font-size:13px; background:#fff; color:#163d2a; }
+.week-jump-row select option:disabled{ color:#a3b4a3; }
+.week-jump-btn{ border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; color:#fff; cursor:pointer; background: linear-gradient(135deg, var(--sky-teal), var(--sky-teal-dark)); }
+.week-jump-btn[disabled]{ opacity:.6; cursor:wait; }
+
+.action-buttons-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.action-chip{ border:none; border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700; color:#fff; cursor:pointer; background: linear-gradient(135deg, var(--wheat-gold), var(--wheat-gold-dark)); }
+.action-chip[disabled]{ opacity:.6; cursor:wait; }
+
+.growth-table tr.row-active td{ font-weight:700; color: var(--leaf-green-dark); }
+.growth-table tr.row-active{ background: linear-gradient(90deg, var(--leaf-green), #66BB6A); }
+.growth-table tr.row-active td{ color:#fff; }
+.growth-table tr.row-fully-grown td{ color: var(--wheat-gold-dark); font-weight:800; }
+
+.dt-modal-overlay{ position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; }
+.dt-modal{ background:#fff; border-radius:16px; max-width:480px; width:100%; box-shadow:0 30px 60px rgba(0,0,0,.25); }
+.dt-modal-header{ display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid #eef2ef; background: linear-gradient(135deg, var(--leaf-green-light), #ffffff); border-radius:16px 16px 0 0; }
+.dt-modal-header h3{ margin:0; font-size:16px; color:#163d2a; }
+.dt-modal-close{ border:none; background:none; font-size:22px; line-height:1; cursor:pointer; color:#64748b; }
+.dt-modal-body{ padding:16px 18px; max-height:60vh; overflow-y:auto; }
+.dt-explain-list{ list-style:none; margin:10px 0 0; padding:0; }
+.dt-explain-list li{ display:flex; justify-content:space-between; gap:10px; padding:6px 8px; border-radius:8px; background:#f8fafc; font-size:13px; margin-bottom:6px; }
+.dt-explain-list li .factor-positive{ color: var(--leaf-green-dark); font-weight:700; }
+.dt-explain-list li .factor-negative{ color: var(--terracotta-dark); font-weight:700; }
+
+.harvest-report-row{ display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid #eef2ef; font-size:14px; }
+.harvest-report-row:first-child{ border-top:0; }
+
+.scenario-title {
+    color: #6B3F1D !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    line-height: 1.2 !important;
+}

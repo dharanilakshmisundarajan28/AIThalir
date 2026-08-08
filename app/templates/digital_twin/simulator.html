@@ -1,147 +1,203 @@
-{% extends 'base.html' %}
-{% block title %}Digital Twin — {{ crop | title }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Crop Growth Simulator — {{ crop | title }}{% endblock %}
 
 {% block content %}
-<div class="dt-sim-wrap">
-  <div class="dt-sim-header">
-    <h1>{{ crop | title }} Digital Twin</h1>
-    <a href="{{ url_for('digital_twin.select_crop') }}" class="dt-back-link">← Choose another crop</a>
-  </div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simulation.css') }}">
 
-  <div class="dt-sim-layout">
-    <!-- 3D FARM AREA -->
-    <div id="dtCanvasContainer" class="dt-canvas-container">
-      <canvas id="dtCanvas"></canvas>
-      <div class="dt-weather-badge" id="dtWeatherBadge">Sunny</div>
+<main class="dashboard-container">
+  <header class="dashboard-header">
+    <h1 class="main-title">Crop Growth Simulator</h1>
+    <p class="main-subtitle">
+      Leverage precision agritech data to model your field's performance. Adjust
+      environmental variables to predict yield and mitigate risks before planting.
+    </p>
+  </header>
+
+  <section class="top-controls" aria-label="Simulation Configuration Tools">
+    <button class="btn btn-explain" id="btn-explainable-ai" type="button">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+        <path d="M12 6v2m0 8v2m-6-6h2m8 0h2"></path>
+      </svg>
+      <span>Explainable AI</span>
+    </button>
+
+    <a class="btn btn-select-crop" href="{{ url_for('digital_twin.select_crop') }}">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22v-9"></path>
+        <path d="M12 13C7 13 4 9 4 4c5 0 8 3 8 9z"></path>
+        <path d="M12 13c5 0 8-4 8-9-5 0-8 3-8 9z"></path>
+      </svg>
+      <span>Select Crop</span>
+    </a>
+
+    <a class="btn btn-change-params" href="{{ url_for('farmer.simulation_config', crop=crop) }}">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="4" y1="21" x2="4" y2="14"></line>
+        <line x1="4" y1="10" x2="4" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="3"></line>
+        <line x1="20" y1="21" x2="20" y2="16"></line>
+        <line x1="20" y1="12" x2="20" y2="3"></line>
+        <line x1="1" y1="14" x2="7" y2="14"></line>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="17" y1="16" x2="23" y2="16"></line>
+      </svg>
+      <span>Change Parameters</span>
+    </a>
+  </section>
+
+  <div class="simulation-grid">
+    <div class="simulation-left-column">
+      <div class="card simulation-card">
+        <div class="scenario-bar">
+          <div class="scenario-box">
+            <div class="scenario-icon-wrapper">
+              <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div class="scenario-text">
+              <span class="meta-label">SCENARIO</span>
+              <h2 class="meta-title" id="scenario-title">Loading...</h2>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <div class="scenario-text">
+              <span class="meta-label">CURRENT VISUALIZATION</span>
+              <h2 class="meta-title highlight-text" id="stage-title">Loading...</h2>
+            </div>
+          </div>
+
+          <div class="scenario-box">
+            <div class="scenario-text">
+              <span class="meta-label">WEATHER</span>
+              <h2 class="meta-title" id="weather-title">-</h2>
+            </div>
+          </div>
+        </div>
+
+        <div id="alertsBanner" class="alerts-banner" style="display:none;"></div>
+
+        <div class="visualizer-frame">
+          <div class="visualizer-graphic" id="plantVisualizer"></div>
+        </div>
+
+        <div class="quick-stats-row">
+          <div class="quick-stat-chip"><span>Crop Health</span><strong id="stat-health">-</strong></div>
+          <div class="quick-stat-chip"><span>Soil Moisture</span><strong id="stat-moisture">-</strong></div>
+          <div class="quick-stat-chip highlight-chip"><span>Updated Expected Yield</span><strong id="stat-yield">-</strong></div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-labels">
+            <span class="progress-title">GROWTH TIMELINE</span>
+            <span class="progress-status" id="week-indicator-text">WEEK 0 OF 0</span>
+          </div>
+          <div class="progress-bar-container" role="progressbar" id="progress-bar-container" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar-fill" id="progress-bar" style="width: 0%;"></div>
+          </div>
+
+          <div class="week-jump-row">
+            <label for="weekJumpSelect">Jump to week</label>
+            <select id="weekJumpSelect"></select>
+            <button id="weekJumpBtn" class="week-jump-btn" type="button">View Week</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-toolbar">
+        <button class="btn btn-grow-week" id="btn-grow-week" type="button">
+          <span>Grow 1 Week</span>
+        </button>
+
+        <button class="btn btn-run-full" id="btn-run-full" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Run Full Simulation</span>
+        </button>
+
+        <button class="btn btn-pause" id="btn-pause" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          <span>Pause</span>
+        </button>
+
+        <button class="btn btn-reset" id="btn-reset" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"></path>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          <span>Reset</span>
+        </button>
+      </div>
     </div>
 
-    <!-- SIDE PANEL -->
-    <div class="dt-panel">
-      <div class="dt-panel-section">
-        <h3>Simulation Timeline</h3>
-        <div class="dt-timeline-label">Day <span id="dtDay">0</span> / <span id="dtDuration">120</span></div>
-        <div class="dt-timeline-bar"><div id="dtTimelineFill" class="dt-timeline-fill"></div></div>
-        <div class="dt-kv"><span>Current Growth Stage</span><strong id="dtTimelineStage">-</strong></div>
-        <div class="dt-kv"><span>Days Remaining</span><strong id="dtDaysRemaining">-</strong></div>
-        <div class="dt-kv"><span>Harvest Date</span><strong id="dtHarvestDate">-</strong></div>
-        <div class="dt-timeline-controls">
-          <button id="dtPlayBtn">▶ Play</button>
-          <button id="dtPauseBtn">⏸ Pause</button>
-          <button id="dtNextDayBtn">Next Day</button>
-          <select id="dtSpeedSelect">
-            <option value="1">1x</option>
-            <option value="3" selected>3x</option>
-            <option value="7">7x</option>
-          </select>
-          <button id="dtResetBtn">⟲ Reset</button>
-          <a id="dtChangeParamsBtn" href="{{ url_for('farmer.simulation_config', crop=crop) }}">⚙ Change Parameters</a>
+    <div class="simulation-right-column">
+      <div class="card sidebar-card growth-table-card">
+        <h3 class="card-title">Growth Table</h3>
+        <div class="table-responsive">
+          <table class="growth-table">
+            <thead>
+              <tr>
+                <th>WEEK</th>
+                <th>MILESTONE / DATA</th>
+              </tr>
+            </thead>
+            <tbody id="growthTableBody">
+              <tr><td colspan="2">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="dt-panel-section">
-        <h3>Crop Information</h3>
-        <div class="dt-kv"><span>Growth Stage</span><strong id="dtStage">-</strong></div>
-        <div class="dt-kv"><span>Maturity</span><strong id="dtMaturity">0%</strong></div>
-        <div class="dt-kv"><span>Crop Health</span><strong id="dtHealth">-</strong></div>
-        <div class="dt-kv"><span>Expected Yield</span><strong id="dtYield">-</strong></div>
+  <section class="card sidebar-card summary-card">
+    <div class="summary-header">
+      <div class="summary-icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+          <path d="M13 8h4"></path>
+          <path d="M13 12h4"></path>
+          <path d="M13 16h4"></path>
+        </svg>
       </div>
+      <h3 class="summary-title">Plant Summary</h3>
+    </div>
+    <p class="summary-text" id="plantSummaryText">Loading current crop status...</p>
 
-      <div class="dt-panel-section">
-        <h3>Farm Metrics</h3>
-        <div class="dt-kv"><span>Soil Moisture</span><strong id="dtMoisture">-</strong></div>
-        <div class="dt-kv"><span>Temperature</span><strong id="dtTemp">-</strong></div>
-        <div class="dt-kv"><span>Nitrogen (N)</span><strong id="dtN">-</strong></div>
-        <div class="dt-kv"><span>Phosphorus (P)</span><strong id="dtP">-</strong></div>
-        <div class="dt-kv"><span>Potassium (K)</span><strong id="dtK">-</strong></div>
-        <div class="dt-kv"><span>Pest Level</span><strong id="dtPest">-</strong></div>
-        <div class="dt-kv"><span>Disease Level</span><strong id="dtDisease">-</strong></div>
-      </div>
+    <div id="actionButtons" class="action-buttons-row"></div>
+  </section>
 
-      <div class="dt-panel-section">
-        <h3>Alerts</h3>
-        <ul id="dtAlerts" class="dt-alerts"></ul>
-      </div>
+  <div id="harvestReport" class="card summary-card" style="display:none; margin-top: 18px;">
+    <h3 class="card-title">Harvest Report</h3>
+    <div id="harvestReportBody"></div>
+  </div>
+</main>
 
-      <div class="dt-panel-section">
-        <h3>Available Actions</h3>
-        <div id="dtActions" class="dt-actions"></div>
-      </div>
-
-      <div class="dt-panel-section">
-        <div class="dt-explain-header">
-          <h3>Explainable AI</h3>
-          <button id="dtExplainBtn" class="dt-explain-btn">Why is health changing?</button>
-        </div>
-        <p id="dtExplainSummary" class="dt-explain-summary">Tap the button above to see what's driving the current health score.</p>
-        <ul id="dtExplainList" class="dt-explain-list"></ul>
-      </div>
-
-      <div id="dtHarvestReport" class="dt-panel-section" style="display:none;">
-        <h3>Simulation Report</h3>
-        <div id="dtHarvestBody"></div>
-      </div>
+<!-- Explainable AI Modal -->
+<div id="explainModal" class="dt-modal-overlay" style="display:none;">
+  <div class="dt-modal">
+    <div class="dt-modal-header">
+      <h3>Explainable AI</h3>
+      <button id="explainModalClose" type="button" class="dt-modal-close">&times;</button>
+    </div>
+    <div class="dt-modal-body">
+      <p id="explainSummary">Loading explanation...</p>
+      <ul id="explainFactors" class="dt-explain-list"></ul>
     </div>
   </div>
 </div>
 
-<style>
-  .dt-sim-wrap { max-width: 1300px; margin: 0 auto; padding: 16px; }
-  .dt-sim-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .dt-back-link { color: #16a34a; text-decoration: none; font-weight: 600; }
-  .dt-sim-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-  @media (max-width: 900px) { .dt-sim-layout { grid-template-columns: 1fr; } }
-
-  .dt-canvas-container {
-    position: relative; height: 560px; border-radius: 14px; overflow: hidden;
-    background: linear-gradient(#bfe3ff, #eef7ff); box-shadow: inset 0 0 0 1px #d1d5db;
-  }
-  #dtCanvas { width: 100%; height: 100%; display: block; }
-  .dt-weather-badge {
-    position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,.9);
-    padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: .85rem;
-  }
-
-  .dt-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px;
-    max-height: 560px; overflow-y: auto; }
-  .dt-panel-section { margin-bottom: 18px; }
-  .dt-panel-section h3 { margin: 0 0 8px; font-size: .95rem; color: #374151; text-transform: uppercase;
-    letter-spacing: .04em; }
-  .dt-kv { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
-  .dt-kv span { color: #6b7280; }
-
-  .dt-timeline-label { font-weight: 700; margin-bottom: 6px; }
-  .dt-timeline-bar { background: #e5e7eb; height: 8px; border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
-  .dt-timeline-fill { background: #16a34a; height: 100%; width: 0%; transition: width .3s; }
-  .dt-timeline-controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .dt-timeline-controls button, .dt-timeline-controls select, .dt-timeline-controls a {
-    border: 1px solid #d1d5db; background: #f9fafb; padding: 6px 10px; border-radius: 8px; cursor: pointer;
-    text-decoration: none; color: #111827; font-size: .85rem;
-  }
-
-  .dt-alerts { list-style: none; padding: 0; margin: 0; }
-  .dt-alerts li { background: #fff7ed; border-left: 3px solid #f59e0b; padding: 6px 10px;
-    margin-bottom: 6px; font-size: .85rem; border-radius: 4px; }
-
-  .dt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  .dt-action-btn { border: none; background: #16a34a; color: #fff; padding: 8px 14px;
-    border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600; }
-  .dt-action-btn.secondary { background: #2563eb; }
-  .dt-action-btn.warn { background: #ea580c; }
-  .dt-action-btn.danger { background: #b91c1c; }
-
-  .dt-explain-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .dt-explain-btn { border: 1px solid #a7f3d0; background: #ecfdf5; color: #065f46; border-radius: 8px;
-    padding: 6px 10px; font-size: .78rem; font-weight: 700; cursor: pointer; }
-  .dt-explain-summary { font-size: .85rem; color: #4b5563; margin: 8px 0; }
-  .dt-explain-list { list-style: none; padding: 0; margin: 0; }
-  .dt-explain-list li { display: flex; justify-content: space-between; gap: 8px; font-size: .82rem;
-    padding: 5px 8px; border-radius: 6px; margin-bottom: 4px; background: #f8fafc; }
-  .dt-explain-list li .factor-name { color: #334155; font-weight: 600; text-transform: capitalize; }
-  .dt-explain-list li .factor-value.positive { color: #16a34a; font-weight: 700; }
-  .dt-explain-list li .factor-value.negative { color: #dc2626; font-weight: 700; }
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
   window.DT_SESSION_ID = {{ session_id }};
   window.DT_CROP = {{ crop|tojson }};

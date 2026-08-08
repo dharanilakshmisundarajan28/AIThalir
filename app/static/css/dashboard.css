@@ -2,3 +2,12 @@
 .dashboard { display:flex; gap:20px; }
 .sidebar { width: 220px; background:#f5f5f5; padding: 10px; }
 .main { flex:1; }
+.scenario-title {
+    color: #6B3F1D !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    line-height: 1.2 !important;
+}

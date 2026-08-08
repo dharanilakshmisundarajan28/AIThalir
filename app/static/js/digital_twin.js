@@ -1,349 +1,7 @@
-// /* Digital Twin 3D Farm Simulator
-//  * - Renders a simple procedural 3D farm (ground, crop rows, rain/sun effects)
-//  * - Crop plant meshes scale/color themselves based on growth stage & health
-//  * - All simulation logic lives server-side; this file only visualizes state
-//  *   and calls the Flask API endpoints defined in app/digital_twin/routes.py
-//  */
-
-// (function () {
-//   const SESSION_ID = window.DT_SESSION_ID;
-//   const API = {
-//     state: `/digital-twin/api/state/${SESSION_ID}`,
-//     advance: `/digital-twin/api/advance/${SESSION_ID}`,
-//     action: `/digital-twin/api/action/${SESSION_ID}`,
-//   };
-
-//   const ACTION_LABELS = {
-//     irrigate: { label: '💧 Irrigate', cls: 'dt-action-btn' },
-//     apply_fertilizer: { label: '🌱 Apply Fertilizer', cls: 'dt-action-btn secondary' },
-//     apply_treatment: { label: '🧪 Apply Treatment', cls: 'dt-action-btn warn' },
-//     create_drainage: { label: '🚰 Create Drainage', cls: 'dt-action-btn secondary' },
-//     stop_irrigation: { label: '⛔ Stop Irrigation', cls: 'dt-action-btn secondary' },
-//     harvest: { label: '🌾 Harvest Crop', cls: 'dt-action-btn danger' },
-//   };
-
-//   // Some actions need a quick parameter prompt (e.g. which nutrient to apply).
-//   function promptParamsFor(actionKey) {
-//     if (actionKey === 'apply_fertilizer') {
-//       const nutrient = window.prompt('Which nutrient? (nitrogen / phosphorus / potassium)', 'nitrogen');
-//       return { nutrient: (nutrient || 'nitrogen').toLowerCase(), amount: 20 };
-//     }
-//     if (actionKey === 'irrigate') {
-//       const litres = window.prompt('How many litres per acre to apply?', '500');
-//       return { litres: parseFloat(litres) || 500 };
-//     }
-//     return {};
-//   }
-
-//   let scene, camera, renderer, cropGroup, rainGroup, sunLight, ground;
-//   let playing = false;
-//   let playTimer = null;
-//   let currentState = null;
-//   let activeLifecycle = null;
-//   let plantingDate = null;
-
-//   // ---------- THREE.JS SETUP ----------
-//   function initScene() {
-//     const container = document.getElementById('dtCanvasContainer');
-//     const canvas = document.getElementById('dtCanvas');
-
-//     scene = new THREE.Scene();
-//     scene.background = new THREE.Color(0xbfe3ff);
-
-//     camera = new THREE.PerspectiveCamera(
-//       50, container.clientWidth / container.clientHeight, 0.1, 1000
-//     );
-//     camera.position.set(10, 9, 14);
-//     camera.lookAt(0, 0, 0);
-
-//     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-//     renderer.setSize(container.clientWidth, container.clientHeight);
-//     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-//     // Lights
-//     const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-//     scene.add(ambient);
-//     sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
-//     sunLight.position.set(8, 12, 6);
-//     scene.add(sunLight);
-
-//     // Ground / soil
-//     const groundGeo = new THREE.PlaneGeometry(20, 20);
-//     const groundMat = new THREE.MeshStandardMaterial({ color: 0x8a6d3b });
-//     ground = new THREE.Mesh(groundGeo, groundMat);
-//     ground.rotation.x = -Math.PI / 2;
-//     scene.add(ground);
-
-//     // Simple irrigation channel markers
-//     for (let i = -8; i <= 8; i += 4) {
-//       const channelGeo = new THREE.BoxGeometry(16, 0.05, 0.3);
-//       const channelMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
-//       const channel = new THREE.Mesh(channelGeo, channelMat);
-//       channel.position.set(0, 0.03, i);
-//       scene.add(channel);
-//     }
-
-//     cropGroup = new THREE.Group();
-//     scene.add(cropGroup);
-//     buildCropField();
-
-//     rainGroup = new THREE.Group();
-//     scene.add(rainGroup);
-
-//     // Basic mouse-drag orbit (lightweight, no external controls dependency)
-//     attachSimpleOrbit(canvas);
-
-//     window.addEventListener('resize', onResize);
-//     animate();
-//   }
-
-//   function onResize() {
-//     const container = document.getElementById('dtCanvasContainer');
-//     camera.aspect = container.clientWidth / container.clientHeight;
-//     camera.updateProjectionMatrix();
-//     renderer.setSize(container.clientWidth, container.clientHeight);
-//   }
-
-//   function attachSimpleOrbit(canvas) {
-//     let isDragging = false;
-//     let lastX = 0, lastY = 0;
-//     let theta = Math.atan2(camera.position.x, camera.position.z);
-//     let radius = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
-
-//     canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-//     window.addEventListener('mouseup', () => { isDragging = false; });
-//     window.addEventListener('mousemove', (e) => {
-//       if (!isDragging) return;
-//       const dx = e.clientX - lastX;
-//       lastX = e.clientX;
-//       theta -= dx * 0.005;
-//       camera.position.x = radius * Math.sin(theta);
-//       camera.position.z = radius * Math.cos(theta);
-//       camera.lookAt(0, 1, 0);
-//     });
-//     canvas.addEventListener('wheel', (e) => {
-//       radius = Math.max(6, Math.min(24, radius + e.deltaY * 0.01));
-//       camera.position.x = radius * Math.sin(theta);
-//       camera.position.z = radius * Math.cos(theta);
-//       camera.lookAt(0, 1, 0);
-//       e.preventDefault();
-//     }, { passive: false });
-//   }
-
-//   // Build a grid of simple crop-plant placeholders
-//   const plantMeshes = [];
-//   function buildCropField() {
-//     const rows = 6, cols = 8;
-//     for (let r = 0; r < rows; r++) {
-//       for (let c = 0; c < cols; c++) {
-//         const stemGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 6);
-//         const stemMat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
-//         const stem = new THREE.Mesh(stemGeo, stemMat);
-//         const x = (c - cols / 2) * 1.6 + 0.8;
-//         const z = (r - rows / 2) * 1.6 + 0.8;
-//         stem.position.set(x, 0.2, z);
-//         cropGroup.add(stem);
-//         plantMeshes.push(stem);
-//       }
-//     }
-//   }
-
-//   function updatePlantVisuals(state) {
-//     const maturity = state.maturityPercent / 100; // 0..1
-//     const health = state.cropHealth / 100; // 0..1
-//     const lifecycle = getCropLifecycle(state.crop || window.DT_CROP || 'rice');
-//     const progress = state.simulationDay / lifecycle.duration;
-//     const scaleY = 0.3 + Math.max(0.05, Math.min(1, progress)) * 2.2;
-//     let color = new THREE.Color(0x22c55e); // healthy green
-//     if (health < 0.65) color = new THREE.Color(0xca8a04); // stressed yellow
-//     if (health < 0.35) color = new THREE.Color(0x92400e); // damaged brown
-
-//     plantMeshes.forEach((mesh, i) => {
-//       const jitter = 0.9 + (i % 5) * 0.04;
-//       mesh.scale.set(1, scaleY * jitter, 1);
-//       mesh.position.y = (0.2 * scaleY * jitter);
-//       mesh.material.color.copy(color);
-//     });
-
-//     // Soil tone reflects moisture (darker = wetter)
-//     const moisture = state.soilMoisture / 100;
-//     const dry = new THREE.Color(0xb08a4f);
-//     const wet = new THREE.Color(0x4b3621);
-//     ground.material.color.copy(dry.clone().lerp(wet, Math.min(1, moisture)));
-//   }
-
-//   function updateWeatherVisuals(state) {
-//     document.getElementById('dtWeatherBadge').textContent = state.weather;
-
-//     // clear old rain
-//     while (rainGroup.children.length) rainGroup.remove(rainGroup.children[0]);
-
-//     const isRain = state.weather === 'Heavy Rain' || state.weather === 'Light Rain';
-//     scene.background = new THREE.Color(isRain ? 0x8ea9c2 : (state.weather === 'Heat Wave' ? 0xffd9a0 : 0xbfe3ff));
-//     sunLight.intensity = state.weather === 'Heat Wave' ? 1.3 : (isRain ? 0.5 : 0.9);
-
-//     if (isRain) {
-//       const dropCount = state.weather === 'Heavy Rain' ? 250 : 100;
-//       const geo = new THREE.BufferGeometry();
-//       const positions = new Float32Array(dropCount * 3);
-//       for (let i = 0; i < dropCount; i++) {
-//         positions[i * 3] = (Math.random() - 0.5) * 20;
-//         positions[i * 3 + 1] = Math.random() * 10;
-//         positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-//       }
-//       geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-//       const mat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.08 });
-//       const points = new THREE.Points(geo, mat);
-//       rainGroup.add(points);
-//     }
-//   }
-
-//   function animate() {
-//     requestAnimationFrame(animate);
-//     rainGroup.children.forEach((points) => {
-//       const pos = points.geometry.attributes.position;
-//       for (let i = 0; i < pos.count; i++) {
-//         let y = pos.getY(i) - 0.25;
-//         if (y < 0) y = 10;
-//         pos.setY(i, y);
-//       }
-//       pos.needsUpdate = true;
-//     });
-//     renderer.render(scene, camera);
-//   }
-
-//   // ---------- UI / STATE SYNC ----------
-//   function renderState(state) {
-//     currentState = state;
-//     const lifecycle = getCropLifecycle(state.crop || window.DT_CROP || 'rice');
-//     const currentDay = Math.max(0, Math.min(state.simulationDay || 0, lifecycle.duration));
-//     const stage = getStageForDay(state.crop || window.DT_CROP || 'rice', currentDay);
-//     const progressPct = getProgressPercent(state.crop || window.DT_CROP || 'rice', currentDay);
-//     const remainingDays = getDaysRemaining(state.crop || window.DT_CROP || 'rice', currentDay);
-//     const harvestDate = getHarvestDate(state.crop || window.DT_CROP || 'rice', plantingDate || new Date());
-
-//     document.getElementById('dtDay').textContent = currentDay;
-//     document.getElementById('dtDuration').textContent = lifecycle.duration;
-//     document.getElementById('dtTimelineFill').style.width = Math.min(100, progressPct) + '%';
-
-//     document.getElementById('dtStage').textContent = stage.name;
-//     document.getElementById('dtTimelineStage').textContent = stage.name;
-//     document.getElementById('dtDaysRemaining').textContent = remainingDays;
-//     document.getElementById('dtHarvestDate').textContent = harvestDate;
-//     document.getElementById('dtMaturity').textContent = progressPct + '%';
-//     document.getElementById('dtHealth').textContent = state.cropHealth + '%';
-
-//     document.getElementById('dtMoisture').textContent = Math.round(state.soilMoisture) + '%';
-//     document.getElementById('dtTemp').textContent = Math.round(state.temperature) + '°C';
-//     document.getElementById('dtN').textContent = Math.round(state.nitrogen) + '%';
-//     document.getElementById('dtP').textContent = Math.round(state.phosphorus) + '%';
-//     document.getElementById('dtK').textContent = Math.round(state.potassium) + '%';
-//     document.getElementById('dtPest').textContent = Math.round(state.pestLevel) + '%';
-//     document.getElementById('dtDisease').textContent = Math.round(state.diseaseLevel) + '%';
-
-//     const alertsEl = document.getElementById('dtAlerts');
-//     alertsEl.innerHTML = '';
-//     (state.alerts || []).forEach((a) => {
-//       const li = document.createElement('li');
-//       li.textContent = a;
-//       alertsEl.appendChild(li);
-//     });
-
-//     const actionsEl = document.getElementById('dtActions');
-//     actionsEl.innerHTML = '';
-//     (state.availableActions || []).forEach((actionKey) => {
-//       const meta = ACTION_LABELS[actionKey] || { label: actionKey, cls: 'dt-action-btn' };
-//       const btn = document.createElement('button');
-//       btn.className = meta.cls;
-//       btn.textContent = meta.label;
-//       btn.addEventListener('click', () => performAction(actionKey, promptParamsFor(actionKey)));
-//       actionsEl.appendChild(btn);
-//     });
-
-//     updatePlantVisuals(state);
-//     updateWeatherVisuals(state);
-
-//     if (state.status === 'harvested' || state.status === 'failed') {
-//       stopPlaying();
-//       showHarvestReport(state);
-//     }
-//   }
-
-//   function showHarvestReport(state) {
-//     const box = document.getElementById('dtHarvestReport');
-//     const body = document.getElementById('dtHarvestBody');
-//     box.style.display = 'block';
-//     body.innerHTML = `
-//       <div class="dt-kv"><span>Status</span><strong>${state.status}</strong></div>
-//       <div class="dt-kv"><span>Final Health</span><strong>${state.cropHealth}%</strong></div>
-//       <div class="dt-kv"><span>Actual Yield</span><strong>${state.actualYieldKg ?? '-'} kg</strong></div>
-//       <div class="dt-kv"><span>Water Used</span><strong>${Math.round(state.waterUsedLitres)} L</strong></div>
-//       <div class="dt-kv"><span>Fertilizer Used</span><strong>${Math.round(state.fertilizerAppliedKg)} kg</strong></div>
-//       <div class="dt-kv"><span>Treatment Applied</span><strong>${Math.round(state.pesticideAppliedL)} L</strong></div>
-//     `;
-//   }
-
-//   function fetchState() {
-//     fetch(API.state).then((r) => r.json()).then((data) => {
-//       if (data.success) renderState(data.state);
-//     });
-//   }
-
-//   function advanceDay(steps) {
-//     fetch(API.advance, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ steps: steps || 1 }),
-//     })
-//       .then((r) => r.json())
-//       .then((data) => { if (data.success) renderState(data.state); });
-//   }
-
-//   function performAction(actionKey, params) {
-//     fetch(API.action, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ action: actionKey, params: params || {} }),
-//     })
-//       .then((r) => r.json())
-//       .then((data) => { if (data.success) renderState(data.state); });
-//   }
-
-//   function stopPlaying() {
-//     playing = false;
-//     if (playTimer) clearInterval(playTimer);
-//     playTimer = null;
-//   }
-
-//   // ---------- CONTROLS ----------
-//   document.getElementById('dtPlayBtn').addEventListener('click', () => {
-//     if (playing) return;
-//     playing = true;
-//     const speed = parseInt(document.getElementById('dtSpeedSelect').value, 10) || 1;
-//     const lifecycle = getCropLifecycle(window.DT_CROP || 'rice');
-//     const interval = Math.max(180, Math.round(1200 / (lifecycle.animationSpeed * speed)));
-//     playTimer = setInterval(() => {
-//       if (currentState && currentState.status !== 'growing') { stopPlaying(); return; }
-//       advanceDay(speed);
-//     }, interval);
-//   });
-//   document.getElementById('dtPauseBtn').addEventListener('click', stopPlaying);
-//   document.getElementById('dtNextDayBtn').addEventListener('click', () => advanceDay(1));
-//   document.getElementById('dtSpeedSelect').addEventListener('change', () => {
-//     if (playing) { stopPlaying(); document.getElementById('dtPlayBtn').click(); }
-//   });
-
-//   // ---------- INIT ----------
-//   initScene();
-//   fetchState();
-// })();
-/* Digital Twin 3D Farm Simulator
- * - Renders a simple procedural 3D farm (ground, crop rows, rain/sun effects)
- * - Crop plant meshes scale/color themselves based on growth stage & health
- * - ALL simulation logic lives server-side (simulation_engine.py). This file
- *   only visualizes state and calls the Flask API endpoints defined in
- *   app/digital_twin/routes.py. No growth-stage/duration table is
- *   duplicated here - every value comes from the backend state object.
+/* Digital Twin Simulator controller — week-based only, no day-by-day view.
+ * ALL numbers come from app/digital_twin/routes.py, which only calls
+ * simulation_engine.py + explainability.py. This file renders backend
+ * responses and never invents/animates fake data.
  */
 
 (function () {
@@ -354,382 +12,462 @@
     action: `/digital-twin/api/action/${SESSION_ID}`,
     explain: `/digital-twin/api/explain/${SESSION_ID}`,
     reset: `/digital-twin/api/reset/${SESSION_ID}`,
+    config: `/digital-twin/api/config/${SESSION_ID}`,
+    jump: `/digital-twin/api/jump/${SESSION_ID}`,
   };
 
+  // Only "harvest" remains a farmer-triggered action button. Irrigate /
+  // Apply Fertilizer / Apply Treatment are intentionally not rendered -
+  // farmers now influence outcomes via Parameter Configuration up front,
+  // and the "Updated Expected Yield" stat reflects that automatically.
+  const VISIBLE_ACTIONS = new Set(['harvest']);
   const ACTION_LABELS = {
-    irrigate: { label: '💧 Irrigate', cls: 'dt-action-btn' },
-    apply_fertilizer: { label: '🌱 Apply Fertilizer', cls: 'dt-action-btn secondary' },
-    apply_treatment: { label: '🧪 Apply Treatment', cls: 'dt-action-btn warn' },
-    create_drainage: { label: '🚰 Create Drainage', cls: 'dt-action-btn secondary' },
-    stop_irrigation: { label: '⛔ Stop Irrigation', cls: 'dt-action-btn secondary' },
-    harvest: { label: '🌾 Harvest Crop', cls: 'dt-action-btn danger' },
+    harvest: { label: '🌾 Harvest Crop', cls: 'action-chip' },
   };
 
-  function promptParamsFor(actionKey) {
-    if (actionKey === 'apply_fertilizer') {
-      const nutrient = window.prompt('Which nutrient? (nitrogen / phosphorus / potassium)', 'nitrogen');
-      return { nutrient: (nutrient || 'nitrogen').toLowerCase(), amount: 20 };
-    }
-    if (actionKey === 'irrigate') {
-      const litres = window.prompt('How many litres per acre to apply?', '500');
-      return { litres: parseFloat(litres) || 500 };
-    }
-    return {};
-  }
-
-  let scene, camera, renderer, cropGroup, rainGroup, sunLight, ground;
-  let playing = false;
-  let playTimer = null;
+  let cropConfig = null;   // { crop_display_name, duration_days, growth_stages: [{name,start_day,end_day}] }
   let currentState = null;
-  let plantingDate = new Date();
+  let runningFull = false;
+  let runTimer = null;
 
-  // ---------- THREE.JS SETUP ----------
-  function initScene() {
-    const container = document.getElementById('dtCanvasContainer');
-    const canvas = document.getElementById('dtCanvas');
+  // ---------------------------------------------------------------------
+  // Week helpers
+  // ---------------------------------------------------------------------
+  function totalWeeksFor(durationDays) {
+    return Math.max(1, Math.ceil((durationDays || 1) / 7));
+  }
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xbfe3ff);
+  function currentWeekFor(day) {
+    return day > 0 ? Math.ceil(day / 7) : 0;
+  }
 
-    camera = new THREE.PerspectiveCamera(
-      50, container.clientWidth / container.clientHeight, 0.1, 1000
-    );
-    camera.position.set(10, 9, 14);
-    camera.lookAt(0, 0, 0);
-
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambient);
-    sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    sunLight.position.set(8, 12, 6);
-    scene.add(sunLight);
-
-    const groundGeo = new THREE.PlaneGeometry(20, 20);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x8a6d3b });
-    ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
-
-    for (let i = -8; i <= 8; i += 4) {
-      const channelGeo = new THREE.BoxGeometry(16, 0.05, 0.3);
-      const channelMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
-      const channel = new THREE.Mesh(channelGeo, channelMat);
-      channel.position.set(0, 0.03, i);
-      scene.add(channel);
+  // ---------------------------------------------------------------------
+  // fetchState / config
+  // ---------------------------------------------------------------------
+  async function fetchConfig() {
+    const res = await fetch(API.config);
+    const data = await res.json();
+    if (data.success) {
+      cropConfig = data;
+      document.getElementById('scenario-title').textContent = `${data.crop_display_name} Digital Twin`;
     }
-
-    cropGroup = new THREE.Group();
-    scene.add(cropGroup);
-    buildCropField();
-
-    rainGroup = new THREE.Group();
-    scene.add(rainGroup);
-
-    attachSimpleOrbit(canvas);
-
-    window.addEventListener('resize', onResize);
-    animate();
+    return data;
   }
 
-  function onResize() {
-    const container = document.getElementById('dtCanvasContainer');
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+  async function fetchState() {
+    const res = await fetch(API.state);
+    const data = await res.json();
+    if (data.success) renderState(data.state);
+    return data;
   }
 
-  function attachSimpleOrbit(canvas) {
-    let isDragging = false;
-    let lastX = 0;
-    let theta = Math.atan2(camera.position.x, camera.position.z);
-    let radius = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
-
-    canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; });
-    window.addEventListener('mouseup', () => { isDragging = false; });
-    window.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - lastX;
-      lastX = e.clientX;
-      theta -= dx * 0.005;
-      camera.position.x = radius * Math.sin(theta);
-      camera.position.z = radius * Math.cos(theta);
-      camera.lookAt(0, 1, 0);
-    });
-    canvas.addEventListener('wheel', (e) => {
-      radius = Math.max(6, Math.min(24, radius + e.deltaY * 0.01));
-      camera.position.x = radius * Math.sin(theta);
-      camera.position.z = radius * Math.cos(theta);
-      camera.lookAt(0, 1, 0);
-      e.preventDefault();
-    }, { passive: false });
-  }
-
-  const plantMeshes = [];
-  function buildCropField() {
-    const rows = 6, cols = 8;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const stemGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 6);
-        const stemMat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
-        const stem = new THREE.Mesh(stemGeo, stemMat);
-        const x = (c - cols / 2) * 1.6 + 0.8;
-        const z = (r - rows / 2) * 1.6 + 0.8;
-        stem.position.set(x, 0.2, z);
-        cropGroup.add(stem);
-        plantMeshes.push(stem);
-      }
-    }
-  }
-
-  // Growth visualisation driven entirely by backend fields: maturityPercent
-  // (0-100, from simulation_engine) and cropHealth (0-100).
-  function updatePlantVisuals(state) {
-    const progress = Math.max(0, Math.min(1, (state.maturityPercent || 0) / 100));
-    const health = Math.max(0, Math.min(1, (state.cropHealth || 0) / 100));
-    const scaleY = 0.3 + progress * 2.2;
-
-    let color = new THREE.Color(0x22c55e); // healthy green
-    if (health < 0.65) color = new THREE.Color(0xca8a04); // stressed yellow
-    if (health < 0.35) color = new THREE.Color(0x92400e); // damaged brown
-
-    plantMeshes.forEach((mesh, i) => {
-      const jitter = 0.9 + (i % 5) * 0.04;
-      mesh.scale.set(1, scaleY * jitter, 1);
-      mesh.position.y = (0.2 * scaleY * jitter);
-      mesh.material.color.copy(color);
-    });
-
-    const moisture = (state.soilMoisture || 0) / 100;
-    const dry = new THREE.Color(0xb08a4f);
-    const wet = new THREE.Color(0x4b3621);
-    ground.material.color.copy(dry.clone().lerp(wet, Math.min(1, moisture)));
-  }
-
-  function updateWeatherVisuals(state) {
-    document.getElementById('dtWeatherBadge').textContent = state.weather;
-
-    while (rainGroup.children.length) rainGroup.remove(rainGroup.children[0]);
-
-    const isRain = state.weather === 'Heavy Rain' || state.weather === 'Light Rain';
-    scene.background = new THREE.Color(isRain ? 0x8ea9c2 : (state.weather === 'Heat Wave' ? 0xffd9a0 : 0xbfe3ff));
-    sunLight.intensity = state.weather === 'Heat Wave' ? 1.3 : (isRain ? 0.5 : 0.9);
-
-    if (isRain) {
-      const dropCount = state.weather === 'Heavy Rain' ? 250 : 100;
-      const geo = new THREE.BufferGeometry();
-      const positions = new Float32Array(dropCount * 3);
-      for (let i = 0; i < dropCount; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 20;
-        positions[i * 3 + 1] = Math.random() * 10;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-      }
-      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const mat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.08 });
-      rainGroup.add(new THREE.Points(geo, mat));
-    }
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    rainGroup.children.forEach((points) => {
-      const pos = points.geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        let y = pos.getY(i) - 0.25;
-        if (y < 0) y = 10;
-        pos.setY(i, y);
-      }
-      pos.needsUpdate = true;
-    });
-    renderer.render(scene, camera);
-  }
-
-  // ---------- UI / STATE SYNC ----------
-  function formatHarvestDate(durationDays, fromDate) {
-    const base = fromDate ? new Date(fromDate) : new Date();
-    if (Number.isNaN(base.getTime())) return '—';
-    const target = new Date(base);
-    target.setDate(target.getDate() + (durationDays || 0));
-    return target.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
+  // ---------------------------------------------------------------------
+  // renderState - the single place that paints the whole page
+  // ---------------------------------------------------------------------
   function renderState(state) {
     currentState = state;
-    const currentDay = Math.max(0, state.simulationDay || 0);
-    const durationDays = state.durationDays || 0;
-    const progressPct = durationDays ? Math.min(100, Math.round((currentDay / durationDays) * 100)) : 0;
-    const remainingDays = Math.max(0, durationDays - currentDay);
-
-    document.getElementById('dtDay').textContent = currentDay;
-    document.getElementById('dtDuration').textContent = durationDays;
-    document.getElementById('dtTimelineFill').style.width = progressPct + '%';
-
-    document.getElementById('dtStage').textContent = state.growthStage || '-';
-    document.getElementById('dtTimelineStage').textContent = state.growthStage || '-';
-    document.getElementById('dtDaysRemaining').textContent = remainingDays;
-    document.getElementById('dtHarvestDate').textContent = formatHarvestDate(durationDays, plantingDate);
-    document.getElementById('dtMaturity').textContent = (state.maturityPercent || 0) + '%';
-    document.getElementById('dtHealth').textContent = (state.cropHealth || 0) + '%';
-    document.getElementById('dtYield').textContent = state.expectedYieldKg != null
-      ? `${Math.round(state.expectedYieldKg)} kg`
-      : '-';
-
-    document.getElementById('dtMoisture').textContent = Math.round(state.soilMoisture) + '%';
-    document.getElementById('dtTemp').textContent = Math.round(state.temperature) + '°C';
-    document.getElementById('dtN').textContent = Math.round(state.nitrogen) + '%';
-    document.getElementById('dtP').textContent = Math.round(state.phosphorus) + '%';
-    document.getElementById('dtK').textContent = Math.round(state.potassium) + '%';
-    document.getElementById('dtPest').textContent = Math.round(state.pestLevel) + '%';
-    document.getElementById('dtDisease').textContent = Math.round(state.diseaseLevel) + '%';
-
-    const alertsEl = document.getElementById('dtAlerts');
-    alertsEl.innerHTML = '';
-    (state.alerts || []).forEach((a) => {
-      const li = document.createElement('li');
-      li.textContent = a;
-      alertsEl.appendChild(li);
-    });
-
-    const actionsEl = document.getElementById('dtActions');
-    actionsEl.innerHTML = '';
-    (state.availableActions || []).forEach((actionKey) => {
-      const meta = ACTION_LABELS[actionKey] || { label: actionKey, cls: 'dt-action-btn' };
-      const btn = document.createElement('button');
-      btn.className = meta.cls;
-      btn.textContent = meta.label;
-      btn.addEventListener('click', () => performAction(actionKey, promptParamsFor(actionKey)));
-      actionsEl.appendChild(btn);
-    });
-
-    updatePlantVisuals(state);
-    updateWeatherVisuals(state);
+    updateStageTitle(state);
+    updateProgress(state);
+    updateWeather(state);
+    updatePlant(state);
+    updateGrowthTable(state);
+    updateAlertsAndActions(state);
+    updateStatChips(state);
+    populateWeekJumpSelect(state);
 
     if (state.status === 'harvested' || state.status === 'failed') {
-      stopPlaying();
+      stopRunFull();
       showHarvestReport(state);
+    } else {
+      document.getElementById('harvestReport').style.display = 'none';
     }
   }
 
-  function showHarvestReport(state) {
-    const box = document.getElementById('dtHarvestReport');
-    const body = document.getElementById('dtHarvestBody');
-    box.style.display = 'block';
-    body.innerHTML = `
-      <div class="dt-kv"><span>Status</span><strong>${state.status}</strong></div>
-      <div class="dt-kv"><span>Final Health</span><strong>${state.cropHealth}%</strong></div>
-      <div class="dt-kv"><span>Actual Yield</span><strong>${state.actualYieldKg ?? '-'} kg</strong></div>
-      <div class="dt-kv"><span>Water Used</span><strong>${Math.round(state.waterUsedLitres)} L</strong></div>
-      <div class="dt-kv"><span>Fertilizer Used</span><strong>${Math.round(state.fertilizerAppliedKg)} kg</strong></div>
-      <div class="dt-kv"><span>Treatment Applied</span><strong>${Math.round(state.pesticideAppliedL)} L</strong></div>
-    `;
+  function updateStatChips(state) {
+    document.getElementById('stat-health').textContent = `${Math.round(state.cropHealth)}%`;
+    document.getElementById('stat-moisture').textContent = `${Math.round(state.soilMoisture)}%`;
+    document.getElementById('stat-yield').textContent = state.expectedYieldKg != null
+      ? `${Math.round(state.expectedYieldKg)} kg`
+      : '-';
   }
 
-  function renderExplanation(explanation) {
-    const summaryEl = document.getElementById('dtExplainSummary');
-    const listEl = document.getElementById('dtExplainList');
-    if (!explanation) {
-      summaryEl.textContent = 'No explanation available for this crop state.';
-      listEl.innerHTML = '';
+  function updateWeather(state) {
+    document.getElementById('weather-title').textContent = state.weather || '-';
+  }
+
+  // ---------------------------------------------------------------------
+  // "Current Visualization" title - week-based, shows Fully Grown when done
+  // ---------------------------------------------------------------------
+  function updateStageTitle(state) {
+    const fullyGrown = (state.maturityPercent || 0) >= 100 || state.status === 'harvested';
+    const label = fullyGrown ? 'Fully Grown 🌾' : (state.growthStage || '-');
+    document.getElementById('stage-title').textContent = label;
+  }
+
+  function updateProgress(state) {
+    const duration = state.durationDays || (cropConfig ? cropConfig.duration_days : 0) || 1;
+    const day = state.simulationDay || 0;
+    const percent = Math.max(0, Math.min(100, state.maturityPercent != null ? state.maturityPercent : (day / duration) * 100));
+
+    const totalWeeks = totalWeeksFor(duration);
+    const currentWeek = Math.min(totalWeeks, currentWeekFor(day)) || 0;
+
+    document.getElementById('week-indicator-text').textContent = `WEEK ${currentWeek} OF ${totalWeeks}`;
+    document.getElementById('progress-bar').style.width = `${percent}%`;
+    document.getElementById('progress-bar-container').setAttribute('aria-valuenow', String(Math.round(percent)));
+  }
+
+  // ---------------------------------------------------------------------
+  // Week Jump selector - forward only (see routes.py api_jump docstring)
+  // ---------------------------------------------------------------------
+  function populateWeekJumpSelect(state) {
+    const select = document.getElementById('weekJumpSelect');
+    if (!cropConfig) return;
+
+    const duration = cropConfig.duration_days;
+    const totalWeeks = totalWeeksFor(duration);
+    const day = state.simulationDay || 0;
+    const currentWeek = currentWeekFor(day);
+
+    const previousValue = select.value;
+    select.innerHTML = '';
+    for (let week = 1; week <= totalWeeks; week++) {
+      const option = document.createElement('option');
+      option.value = String(week);
+      const passed = week <= currentWeek;
+      option.textContent = passed ? `Week ${week} (viewed)` : `Week ${week}`;
+      if (passed) option.disabled = true;
+      select.appendChild(option);
+    }
+
+    // Default the selector to the next week not yet viewed.
+    const nextWeek = Math.min(totalWeeks, currentWeek + 1);
+    const desired = previousValue && Number(previousValue) > currentWeek ? previousValue : String(nextWeek);
+    select.value = desired;
+
+    const jumpBtn = document.getElementById('weekJumpBtn');
+    jumpBtn.disabled = state.status !== 'growing' || currentWeek >= totalWeeks;
+  }
+
+  async function jumpToSelectedWeek() {
+    const select = document.getElementById('weekJumpSelect');
+    const week = Number(select.value);
+    if (!week) return;
+
+    const btn = document.getElementById('weekJumpBtn');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    const res = await fetch(API.jump, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ week }),
+    });
+    const data = await res.json();
+    btn.textContent = 'View Week';
+    if (data.success) renderState(data.state);
+  }
+
+  // ---------------------------------------------------------------------
+  // Growth table - built from real crop_catalog growth_stages, highlights
+  // the row for the current week and marks the final row "Fully Grown"
+  // once maturity reaches 100%.
+  // ---------------------------------------------------------------------
+  function updateGrowthTable(state) {
+    const body = document.getElementById('growthTableBody');
+    if (!cropConfig || !cropConfig.growth_stages || !cropConfig.growth_stages.length) {
+      body.innerHTML = '<tr><td colspan="2">No growth stage data available.</td></tr>';
       return;
     }
 
-    const probabilityNote = explanation.probability != null
-      ? `Model confidence for this crop under current conditions: ${explanation.probability}%.`
-      : '';
-    const leaf = explanation.explanations && explanation.explanations.leafColour;
-    const fruit = explanation.explanations && explanation.explanations.fruitCount;
-    summaryEl.textContent = [probabilityNote, leaf, fruit].filter(Boolean).join(' ');
+    const day = state.simulationDay || 0;
+    const fullyGrown = (state.maturityPercent || 0) >= 100 || state.status === 'harvested';
+    const stages = cropConfig.growth_stages;
 
-    const contributions = explanation.contributions || [];
-    listEl.innerHTML = contributions.slice(0, 6).map((item) => {
-      const cls = item.value >= 0 ? 'positive' : 'negative';
-      const sign = item.value >= 0 ? '+' : '';
-      return `<li><span class="factor-name">${item.feature.replace(/([A-Z])/g, ' $1')}</span><span class="factor-value ${cls}">${sign}${item.value.toFixed(2)}</span></li>`;
-    }).join('') || '<li>No factor data available.</li>';
-  }
+    const rows = stages.map((stage, index) => {
+      const weekStart = Math.floor(stage.start_day / 7) + 1;
+      const weekEnd = Math.max(weekStart, Math.floor(stage.end_day / 7) + 1);
+      const weekLabel = weekStart === weekEnd ? `Wk ${weekStart}` : `Wk ${weekStart}-${weekEnd}`;
+      const isLastStage = index === stages.length - 1;
+      const isActive = day >= stage.start_day && day <= stage.end_day && !(fullyGrown && isLastStage);
+      const showFullyGrown = fullyGrown && isLastStage;
 
-  function fetchState() {
-    fetch(API.state).then((r) => r.json()).then((data) => {
-      if (data.success) renderState(data.state);
+      let milestone = stage.name;
+      let rowClass = '';
+      if (showFullyGrown) {
+        milestone = 'Fully Grown 🌾';
+        rowClass = 'row-fully-grown';
+      } else if (isActive) {
+        milestone = `${stage.name} (Current)`;
+        rowClass = 'row-active';
+      }
+
+      return `<tr class="${rowClass}"><td class="col-week">${weekLabel}</td><td class="col-milestone">${milestone}</td></tr>`;
     });
+
+    body.innerHTML = rows.join('');
   }
 
-  function advanceDay(steps) {
-    fetch(API.advance, {
+  // ---------------------------------------------------------------------
+  // Plant visualization - built entirely from maturityPercent + cropHealth.
+  // ---------------------------------------------------------------------
+  function healthColor(healthPercent) {
+    if (healthPercent >= 70) return { stem: '#2e7d32', leaf: '#4ADE80' };
+    if (healthPercent >= 40) return { stem: '#a16207', leaf: '#d6b64a' };
+    return { stem: '#7c2d12', leaf: '#b45309' };
+  }
+
+  function updatePlant(state) {
+    const container = document.getElementById('plantVisualizer');
+    const maturity = Math.max(0, Math.min(100, state.maturityPercent || 0));
+    const health = Math.max(0, Math.min(100, state.cropHealth || 0));
+    const colors = healthColor(health);
+    const fullyGrown = maturity >= 100 || state.status === 'harvested';
+
+    const stemHeight = 20 + (maturity / 100) * 130;
+    const leafCount = maturity < 15 ? 0 : maturity < 45 ? 2 : maturity < 70 ? 4 : 6;
+    const showFlowerFruit = maturity >= 55;
+
+    let leaves = '';
+    for (let i = 0; i < leafCount; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const yOffset = 200 - stemHeight - (i * 14);
+      leaves += `<path d="M200 ${yOffset} Q${200 + side * 45} ${yOffset - 15} ${200 + side * 70} ${yOffset} Q${200 + side * 45} ${yOffset + 12} 200 ${yOffset + 4}" fill="${colors.leaf}" stroke="${colors.stem}" stroke-width="1.5"/>`;
+    }
+
+    const fruit = showFlowerFruit
+      ? `<circle cx="200" cy="${200 - stemHeight - leafCount * 14 - 8}" r="9" fill="${fullyGrown ? '#EAB308' : '#F97316'}" stroke="#92400e" stroke-width="1.5"/>`
+      : '';
+
+    const badge = fullyGrown
+      ? `<text x="30" y="45" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#166534">🌾 Fully Grown</text>`
+      : '';
+
+    container.innerHTML = `
+      <svg class="plant-diagram" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="360" height="260" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+        <rect x="20" y="20" width="360" height="20" rx="6" fill="#1E293B"/>
+        <circle cx="32" cy="30" r="3" fill="#EF4444"/>
+        <circle cx="42" cy="30" r="3" fill="#F59E0B"/>
+        <circle cx="52" cy="30" r="3" fill="#10B981"/>
+        ${badge}
+
+        <ellipse cx="200" cy="245" rx="70" ry="12" fill="#D1D5DB"/>
+        <path d="M195 245 L205 245 L${200 - 2} ${200 - stemHeight} L${200 + 2} ${200 - stemHeight} Z" fill="${colors.stem}"/>
+
+        ${leaves}
+        ${fruit}
+
+        <text x="30" y="280" font-family="Inter, sans-serif" font-size="11" fill="#64748B">Maturity: ${Math.round(maturity)}%  |  Health: ${Math.round(health)}%</text>
+      </svg>
+    `;
+  }
+
+  // ---------------------------------------------------------------------
+  // Alerts + Recommended Actions (Plant Summary card)
+  // ---------------------------------------------------------------------
+  function updateAlertsAndActions(state) {
+    const banner = document.getElementById('alertsBanner');
+    const alerts = state.alerts || [];
+    if (alerts.length) {
+      banner.style.display = 'block';
+      banner.innerHTML = alerts.map((a) => {
+        const cls = a.toLowerCase().includes('harvest') ? 'alert-pill harvest-ready' : 'alert-pill';
+        return `<div class="${cls}">⚠ ${a}</div>`;
+      }).join('');
+    } else {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
+    }
+
+    const summaryText = document.getElementById('plantSummaryText');
+    const fullyGrown = (state.maturityPercent || 0) >= 100 || state.status === 'harvested';
+    if (state.status === 'harvested') {
+      summaryText.textContent = 'This crop has been harvested. Review the report below or reset to start a new cycle.';
+    } else if (state.status === 'failed') {
+      summaryText.textContent = 'This crop failed due to critically low health. Reset to try a new parameter configuration.';
+    } else if (fullyGrown) {
+      summaryText.textContent = `The crop is fully grown and ready to harvest, with a final health of ${Math.round(state.cropHealth)}%.`;
+    } else if (alerts.length) {
+      summaryText.textContent = `Current growth stage: ${state.growthStage}. ${alerts[0]}`;
+    } else {
+      summaryText.textContent = `Current growth stage: ${state.growthStage}, maturity ${Math.round(state.maturityPercent)}%, health ${Math.round(state.cropHealth)}%. Conditions look stable.`;
+    }
+
+    const actionsEl = document.getElementById('actionButtons');
+    actionsEl.innerHTML = '';
+    (state.availableActions || [])
+      .filter((actionKey) => VISIBLE_ACTIONS.has(actionKey))
+      .forEach((actionKey) => {
+        const meta = ACTION_LABELS[actionKey];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = meta.cls;
+        btn.textContent = meta.label;
+        btn.addEventListener('click', () => performAction(actionKey, {}));
+        actionsEl.appendChild(btn);
+      });
+  }
+
+  function showHarvestReport(state) {
+    const box = document.getElementById('harvestReport');
+    const body = document.getElementById('harvestReportBody');
+    box.style.display = 'block';
+    body.innerHTML = `
+      <div class="harvest-report-row"><span>Status</span><strong>${state.status}</strong></div>
+      <div class="harvest-report-row"><span>Final Health</span><strong>${state.cropHealth}%</strong></div>
+      <div class="harvest-report-row"><span>Actual Yield</span><strong>${state.actualYieldKg ?? '-'} kg</strong></div>
+      <div class="harvest-report-row"><span>Water Used</span><strong>${Math.round(state.waterUsedLitres)} L</strong></div>
+      <div class="harvest-report-row"><span>Fertilizer Used</span><strong>${Math.round(state.fertilizerAppliedKg)} kg</strong></div>
+      <div class="harvest-report-row"><span>Treatment Applied</span><strong>${Math.round(state.pesticideAppliedL)} L</strong></div>
+    `;
+  }
+
+  // ---------------------------------------------------------------------
+  // Backend calls
+  // ---------------------------------------------------------------------
+  async function advanceOneWeek() {
+    const res = await fetch(API.advance, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ steps: steps || 1 }),
-    })
-      .then((r) => r.json())
-      .then((data) => { if (data.success) renderState(data.state); });
+      body: JSON.stringify({ steps: 7 }),
+    });
+    const data = await res.json();
+    if (data.success) renderState(data.state);
+    return data;
   }
 
-  function performAction(actionKey, params) {
-    fetch(API.action, {
+  async function performAction(actionKey, params) {
+    const res = await fetch(API.action, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: actionKey, params: params || {} }),
-    })
-      .then((r) => r.json())
-      .then((data) => { if (data.success) renderState(data.state); });
+    });
+    const data = await res.json();
+    if (data.success) renderState(data.state);
+    return data;
   }
 
-  function fetchExplanation() {
-    const btn = document.getElementById('dtExplainBtn');
-    btn.disabled = true;
-    btn.textContent = 'Analyzing...';
-    fetch(API.explain)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) renderExplanation(data.explanation);
-      })
-      .finally(() => {
-        btn.disabled = false;
-        btn.textContent = 'Why is health changing?';
-      });
+  async function fetchExplanation() {
+    const summaryEl = document.getElementById('explainSummary');
+    const listEl = document.getElementById('explainFactors');
+    summaryEl.textContent = 'Loading explanation...';
+    listEl.innerHTML = '';
+
+    const res = await fetch(API.explain);
+    const data = await res.json();
+    if (!data.success) {
+      summaryEl.textContent = 'Could not load explanation right now.';
+      return;
+    }
+
+    const explanation = data.explanation;
+    const probabilityNote = explanation.probability != null
+      ? `Model confidence for this crop under current conditions: ${explanation.probability}%. `
+      : '';
+    const leaf = (explanation.explanations && explanation.explanations.leafColour) || '';
+    const fruit = (explanation.explanations && explanation.explanations.fruitCount) || '';
+    summaryEl.textContent = `${probabilityNote}${leaf} ${fruit}`.trim();
+
+    const contributions = explanation.contributions || [];
+    listEl.innerHTML = contributions.slice(0, 6).map((item) => {
+      const cls = item.value >= 0 ? 'factor-positive' : 'factor-negative';
+      const sign = item.value >= 0 ? '+' : '';
+      return `<li><span>${item.feature.replace(/([A-Z])/g, ' $1')}</span><span class="${cls}">${sign}${item.value.toFixed(2)}</span></li>`;
+    }).join('') || '<li>No factor data available.</li>';
   }
 
-  function resetSimulation() {
-    stopPlaying();
-    fetch(API.reset, { method: 'POST' })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          document.getElementById('dtHarvestReport').style.display = 'none';
-          plantingDate = new Date();
-          renderState(data.state);
-        }
-      });
+  // ---------------------------------------------------------------------
+  // Grow 1 Week / Run Full / Pause / Reset
+  // ---------------------------------------------------------------------
+  function growOneWeek() {
+    if (runningFull) return;
+    advanceOneWeek();
   }
 
-  function stopPlaying() {
-    playing = false;
-    if (playTimer) clearInterval(playTimer);
-    playTimer = null;
+  function runFullSimulation() {
+    if (runningFull) return;
+    runningFull = true;
+    setToolbarBusy(true);
+
+    const step = async () => {
+      if (!runningFull) return;
+      if (currentState && currentState.status !== 'growing') {
+        stopRunFull();
+        return;
+      }
+      const data = await advanceOneWeek();
+      if (!runningFull) return;
+      if (data.success && data.state.status !== 'growing') {
+        stopRunFull();
+        return;
+      }
+      runTimer = setTimeout(step, 300);
+    };
+    step();
   }
 
-  // ---------- CONTROLS ----------
-  document.getElementById('dtPlayBtn').addEventListener('click', () => {
-    if (playing) return;
-    playing = true;
-    const speed = parseInt(document.getElementById('dtSpeedSelect').value, 10) || 1;
-    const interval = Math.max(180, Math.round(900 / speed));
-    playTimer = setInterval(() => {
-      if (currentState && currentState.status !== 'growing') { stopPlaying(); return; }
-      advanceDay(speed);
-    }, interval);
+  function pauseSimulation() {
+    stopRunFull();
+  }
+
+  function stopRunFull() {
+    runningFull = false;
+    if (runTimer) clearTimeout(runTimer);
+    runTimer = null;
+    setToolbarBusy(false);
+  }
+
+  function setToolbarBusy(isBusy) {
+    document.getElementById('btn-run-full').disabled = isBusy;
+    document.getElementById('btn-grow-week').disabled = isBusy;
+  }
+
+  async function resetSimulation() {
+    stopRunFull();
+    const res = await fetch(API.reset, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('harvestReport').style.display = 'none';
+      renderState(data.state);
+    }
+  }
+
+
+
+  
+  // ---------------------------------------------------------------------
+  // Modal
+  // ---------------------------------------------------------------------
+  function openExplainModal() {
+    document.getElementById('explainModal').style.display = 'flex';
+    fetchExplanation();
+  }
+  function closeExplainModal() {
+    document.getElementById('explainModal').style.display = 'none';
+  }
+
+  // ---------------------------------------------------------------------
+  // Wire up controls
+  // ---------------------------------------------------------------------
+  document.getElementById('btn-grow-week').addEventListener('click', growOneWeek);
+  document.getElementById('btn-run-full').addEventListener('click', runFullSimulation);
+  document.getElementById('btn-pause').addEventListener('click', pauseSimulation);
+  document.getElementById('btn-reset').addEventListener('click', resetSimulation);
+  document.getElementById('weekJumpBtn').addEventListener('click', jumpToSelectedWeek);
+  document.getElementById('btn-explainable-ai').addEventListener('click', openExplainModal);
+  document.getElementById('explainModalClose').addEventListener('click', closeExplainModal);
+  document.getElementById('explainModal').addEventListener('click', (e) => {
+    if (e.target.id === 'explainModal') closeExplainModal();
   });
-  document.getElementById('dtPauseBtn').addEventListener('click', stopPlaying);
-  document.getElementById('dtNextDayBtn').addEventListener('click', () => advanceDay(1));
-  document.getElementById('dtSpeedSelect').addEventListener('change', () => {
-    if (playing) { stopPlaying(); document.getElementById('dtPlayBtn').click(); }
-  });
-  document.getElementById('dtResetBtn').addEventListener('click', resetSimulation);
-  document.getElementById('dtExplainBtn').addEventListener('click', fetchExplanation);
 
-  // ---------- INIT ----------
-  initScene();
-  fetchState();
+  // ---------------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------------
+  (async function init() {
+    await fetchConfig();
+    await fetchState();
+  })();
+
+  
 })();
