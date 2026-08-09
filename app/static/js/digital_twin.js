@@ -218,6 +218,16 @@
   }
 
   function updatePlant(state) {
+    if (window.DigitalTwinFarm) {
+      window.DigitalTwinFarm.update({
+        crop: state.crop || window.DT_CROP,
+        growthProgress: Math.max(0, Math.min(1, (state.maturityPercent || 0) / 100)),
+        health: state.cropHealth,
+        soilMoisture: state.soilMoisture,
+        temperature: state.temperature,
+      });
+      return;
+    }
     const container = document.getElementById('plantVisualizer');
     const maturity = Math.max(0, Math.min(100, state.maturityPercent || 0));
     const health = Math.max(0, Math.min(100, state.cropHealth || 0));

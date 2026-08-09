@@ -23,6 +23,11 @@ html,body{ height:100%; margin:0; background: linear-gradient(180deg,#F6FFF4 0%,
 .meta-title{ margin:0; font-size:15px; color:#13361f; }
 .visualizer-frame{ border-radius:8px; overflow:hidden; padding:8px; }
 .visualizer-graphic{ display:flex; justify-content:center; align-items:center; }
+.farm-visualizer-frame{ padding:0; border:1px solid #d9e7d6; background:#dcecf6; }
+.farm-visualizer{ position:relative; display:block; height:420px; min-height:320px; overflow:hidden; }
+.farm-visualizer canvas{ display:block; width:100%; height:100%; cursor:grab; }
+.farm-visualizer canvas:active{ cursor:grabbing; }
+.farm-overlay{ pointer-events:none; position:absolute; inset:auto 12px 10px; display:flex; justify-content:space-between; gap:12px; color:#ecfdf5; font-size:11px; font-weight:700; letter-spacing:.03em; text-shadow:0 1px 4px rgba(15,23,42,.8); }
 .plant-diagram{ width:100%; max-width:720px; height:auto; }
 .progress-section{ margin-top:12px; }
 .progress-labels{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
@@ -120,6 +125,7 @@ html,body{ height:100%; margin:0; background: linear-gradient(180deg,#F6FFF4 0%,
 .summary-icon-box svg{ width:36px; height:36px; color:#2E7D32; }
 .summary-title{ margin:0; font-size:16px; }
 @media(max-width:980px){ .simulation-grid{ grid-template-columns: 1fr; } .simulation-right-column{ order:2; } }
+@media(max-width:640px){ .farm-visualizer{ height:310px; } .farm-overlay span:last-child{ display:none; } }
 /* --- Dynamic Digital Twin additions (appended, nothing above removed) --- */
 .alerts-banner{ margin-bottom:12px; }
 .alert-pill{ display:flex; align-items:center; gap:8px; background:#fff7ed; border-left:3px solid #f59e0b; padding:8px 12px; border-radius:8px; font-size:13px; color:#7c4a03; margin-bottom:6px; }

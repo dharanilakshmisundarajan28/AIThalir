@@ -83,8 +83,11 @@
 
         <div id="alertsBanner" class="alerts-banner" style="display:none;"></div>
 
-        <div class="visualizer-frame">
-          <div class="visualizer-graphic" id="plantVisualizer"></div>
+        <div class="visualizer-frame farm-visualizer-frame">
+          <div class="visualizer-graphic farm-visualizer" id="plantVisualizer">
+            <canvas id="digitalTwinFarmCanvas" aria-label="Interactive 3D farm simulation"></canvas>
+            <div class="farm-overlay"><span>40 m × 40 m digital field</span><span>Drag to orbit · scroll to zoom</span></div>
+          </div>
         </div>
 
         <div class="quick-stats-row">
@@ -202,5 +205,8 @@
   window.DT_SESSION_ID = {{ session_id }};
   window.DT_CROP = {{ crop|tojson }};
 </script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="{{ url_for('static', filename='js/farm-renderer.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/digital_twin.js') }}"></script>
 {% endblock %}
