@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Preparing Digital Twin - AgriConnect{% endblock %}
+{% block extra_head %}
+<style>
+  .twin-load{min-height:70vh;display:grid;place-items:center;padding:2rem}.load-card{width:min(520px,100%);padding:2.5rem;border:1px solid #d8eadc;border-radius:28px;background:#fff;text-align:center;box-shadow:0 22px 55px rgba(12,74,40,.12)}.load-orb{width:88px;height:88px;margin:0 auto 1.4rem;display:grid;place-items:center;border-radius:50%;color:#fff;background:radial-gradient(circle at 30% 25%,#52d67b,#08733d);box-shadow:0 0 0 12px #edf8ef;animation:pulse 1.5s ease-in-out infinite}.load-orb i{font-size:2.15rem}.load-step{margin:.8rem 0;color:#678071;font-size:.94rem}.load-progress{height:8px;overflow:hidden;border-radius:99px;background:#e8f2e9}.load-progress span{display:block;width:0;height:100%;border-radius:inherit;background:#168348;transition:width .45s ease}@keyframes pulse{50%{transform:scale(1.06)}}@media(prefers-reduced-motion:reduce){.load-orb{animation:none}.load-progress span{transition:none}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="twin-load"><section class="load-card"><div class="load-orb"><i class="fas fa-seedling"></i></div><h1 class="text-2xl font-extrabold text-emerald-950">Preparing your Digital Twin...</h1><p id="loadStep" class="load-step">Analyzing crop conditions...</p><div class="load-progress" aria-label="Preparing digital twin"><span id="loadProgress"></span></div></section></main>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(() => { const steps=['Analyzing crop conditions...','Building farm simulation...','Preparing growth prediction...']; const bar=document.getElementById('loadProgress'); const text=document.getElementById('loadStep'); let index=0; const tick=()=>{bar.style.width=`${(index+1)/steps.length*100}%`;text.textContent=steps[index];index+=1;if(index<steps.length)setTimeout(tick,480);else setTimeout(()=>{const crop=encodeURIComponent((JSON.parse(sessionStorage.getItem('aiThalirDigitalTwin')||'{}').crop)||'{{ crop }}');window.location.href=`/digital-twin/farm-dashboard?crop=${crop}`},520)};tick();})();
+</script>
+{% endblock %}

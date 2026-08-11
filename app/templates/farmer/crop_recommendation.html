@@ -1,1227 +1,349 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Crop Recommendation - AgriConnect{% endblock %}
 
 {% block extra_head %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --page-bg: #f3f6f2;
-    --panel: #ffffff;
-    --text: #0f172a;
-    --muted: #64748b;
-    --green: #1f7a32;
-    --green-2: #0f8d68;
-    --border: rgba(15, 23, 42, 0.08);
-    --shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-  }
-
-  body {
-    background: var(--page-bg);
-    font-family: Inter, sans-serif;
-  }
-
-  .crop-shell {
-    max-width: 1120px;
-    margin: 0 auto;
-  }
-
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    box-shadow: var(--shadow);
-  }
-
-  .section-title {
-    color: var(--text);
-    font-size: 0.95rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
-
-  .input-field {
-    width: 100%;
-    border: 1px solid #d8e1dd;
-    border-radius: 14px;
-    padding: 0.86rem 0.95rem;
-    font-size: 0.95rem;
-    outline: none;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-    background: #fff;
-  }
-
-  .input-field:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #1f7a32 0%, #0f8d68 100%);
-    color: #fff;
-    border: 0;
-    border-radius: 16px;
-    padding: 0.95rem 1.15rem;
-    font-weight: 800;
-    box-shadow: 0 12px 24px rgba(31, 122, 50, 0.22);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(31, 122, 50, 0.26);
-  }
-
-  .btn-ghost {
-    background: #20293d;
-    color: #fff;
-    border: 0;
-    border-radius: 9999px;
-    padding: 0.9rem 1.35rem;
-    font-weight: 800;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  .btn-ghost:hover {
-    transform: translateY(-1px);
-    opacity: 0.96;
-  }
-
-  .btn-soft {
-    background: #dfe8f3;
-    color: #111827;
-    border: 0;
-    border-radius: 16px;
-    padding: 0.95rem 1.25rem;
-    font-weight: 800;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  .btn-soft:hover {
-    transform: translateY(-1px);
-  }
-
-  .page-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.1rem;
-  }
-
-  .page-head h2 {
-    margin: 0;
-    font-size: clamp(2rem, 3vw, 3rem);
-    line-height: 1;
-    letter-spacing: -0.06em;
-    font-weight: 900;
-    color: #0f172a;
-  }
-
-  .stat-card,
-  .roadmap-card,
-  .info-card {
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  }
-
-  .hero-image {
-    position: relative;
-    overflow: hidden;
-    min-height: 320px;
-    background: #0f172a;
-  }
-
-  .hero-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .hero-image .overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.62) 100%);
-  }
-
-  .hero-image .caption {
-    position: absolute;
-    left: 1.2rem;
-    bottom: 1rem;
-    color: #fff;
-    font-size: 1.3rem;
-    line-height: 1.08;
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  }
-
-  .quick-stat {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 0.7rem 0.1rem;
-  }
-
-  .quick-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #edf4e9;
-    color: #1a5d1f;
-    flex: 0 0 auto;
-  }
-
-  .quick-label {
-    font-size: 0.68rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: #718096;
-    margin-bottom: 0.15rem;
-  }
-
-  .quick-value {
-    font-size: 0.98rem;
-    font-weight: 900;
-    color: #0f172a;
-    line-height: 1.2;
-  }
-
-  .summary-card {
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: #fff;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-    color: #1f2937;
-    line-height: 1.62;
-    font-size: 0.93rem;
-  }
-
-  .summary-card strong {
-    font-weight: 900;
-    color: #0f172a;
-  }
-
-  .recommendation-list {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .recommendation-option {
-    display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.8rem;
-    border: 1px solid #dbe8dc;
-    border-radius: 14px;
-    background: #fafffa;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-  }
-
-  .recommendation-option:hover,
-  .recommendation-option:focus-visible {
-    border-color: #86c991;
-    outline: none;
-    transform: translateY(-1px);
-  }
-
-  .recommendation-option.is-selected {
-    border-color: #86c991;
-    background: #eff9ee;
-  }
-
-  .recommendation-rank {
-    display: inline-flex;
-    width: 2rem;
-    height: 2rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9999px;
-    background: #dcecdc;
-    color: #1f5f20;
-    font-size: 0.8rem;
-    font-weight: 900;
-  }
-
-  .recommendation-option.is-selected .recommendation-rank {
-    background: #1f7a32;
-    color: #fff;
-  }
-
-  .recommendation-name { font-weight: 900; color: #0f172a; }
-  .recommendation-probability { font-size: 0.88rem; font-weight: 900; color: #1f7a32; }
-
-  .roadmap-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.8rem;
-  }
-
-  .roadmap-step {
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 9999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #2e7d32;
-    color: #fff;
-    font-weight: 900;
-    margin-bottom: 1rem;
-    box-shadow: 0 10px 18px rgba(46, 125, 50, 0.18);
-  }
-
-  .roadmap-step.soft {
-    background: #c2d8c1;
-    color: #194d1a;
-    box-shadow: none;
-  }
-
-  .roadmap-card {
-    text-align: center;
-    padding: 1rem 0.9rem;
-  }
-
-  .roadmap-card h4 {
-    margin: 0 0 0.55rem;
-    font-size: 0.96rem;
-    font-weight: 900;
-    color: #111827;
-  }
-
-  .roadmap-card p {
-    margin: 0;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: #475569;
-  }
-
-  .roadmap-chip {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 9999px;
-    background: #e8f0e5;
-    color: #1f5f20;
-    padding: 0.28rem 0.7rem;
-    margin-top: 1rem;
-    font-size: 0.72rem;
-    font-weight: 900;
-  }
-
-  .info-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 0.85rem 1rem;
-    background: #1d6e25;
-    color: #fff;
-    border-radius: 18px 18px 0 0;
-  }
-
-  .info-header h3 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 900;
-  }
-
-  .info-body {
-    padding: 0.95rem 1rem 1rem;
-  }
-
-  .finance-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  }
-
-  .finance-row:last-child {
-    border-bottom: 0;
-  }
-
-  .finance-row span:first-child,
-  .tech-label {
-    color: #334155;
-    font-size: 0.88rem;
-    font-weight: 500;
-  }
-
-  .finance-row span:last-child,
-  .tech-value {
-    color: #0f172a;
-    font-size: 0.92rem;
-    font-weight: 900;
-  }
-
-  .tech-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.7rem;
-  }
-
-  .tech-chip {
-    border-radius: 12px;
-    background: #f6f8fb;
-    padding: 0.95rem 0.8rem;
-    text-align: center;
-  }
-
-  .tech-chip .small {
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.2rem;
-  }
-
-  .subtle {
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  .toast-stack {
-    position: fixed;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    pointer-events: none;
-  }
-
-  .toast {
-    pointer-events: auto;
-    min-width: 260px;
-    max-width: 360px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #1f7a32 0%, #0f8d68 100%);
-    color: #fff;
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.2);
-    padding: 0.9rem 1rem;
-    font-size: 0.95rem;
-    font-weight: 800;
-  }
-
-  .result-actions {
-    display: flex;
-    gap: 0.9rem;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-  }
-
-  .result-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 0.95rem;
-  }
-
-  .result-head h2 {
-    margin: 0;
-    font-size: clamp(1.55rem, 2.8vw, 2.5rem);
-    line-height: 1;
-    letter-spacing: -0.06em;
-    font-weight: 900;
-    color: #111827;
-  }
-
-  .result-subtle {
-    margin-top: 0.45rem;
-    font-size: 0.88rem;
-    color: #0f766e;
-    font-weight: 600;
-  }
-
-  .result-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-    gap: 0.9rem;
-    align-items: start;
-  }
-
-  .stack-gap {
-    display: grid;
-    gap: 0.8rem;
-  }
-
-  .footer-actions {
-    display: flex;
-    gap: 0.9rem;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
-  }
-
-  .muted-note {
-    margin-top: 0.85rem;
-    font-size: 0.82rem;
-    color: #64748b;
-    font-style: italic;
-  }
-
-  @media (max-width: 1024px) {
-    .result-grid,
-    .roadmap-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .hero-image {
-      min-height: 240px;
-    }
-
-    .hero-image .caption {
-      font-size: 1.05rem;
-    }
-
-    .page-head,
-    .result-head {
-      flex-direction: column;
-    }
-
-    .result-actions {
-      justify-content: flex-start;
-    }
-
-    .tech-grid {
-      grid-template-columns: 1fr;
-    }
-
-  }
-
-  .btn-simulation {
-    background: linear-gradient(145deg, #2563eb, #1d4ed8);
-    color: white;
-    border: none;
-    border-radius: 16px;
-    padding: 0.95rem 1.4rem;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 8px 0 #163ea5, 0 14px 24px rgba(37,99,235,.35);
-    transition: all .15s ease;
-  }
-
-  .btn-simulation:hover { transform: translateY(-2px); box-shadow: 0 10px 0 #163ea5, 0 18px 28px rgba(37,99,235,.4); }
-  .btn-simulation:active { transform: translateY(6px); box-shadow: 0 2px 0 #163ea5, 0 5px 10px rgba(37,99,235,.3); }
+  :root { --leaf:#178447; --deep:#0d5c38; --ink:#163126; --muted:#718078; --line:#e4eee8; --cream:#f5f8f4; }
+  body { background:linear-gradient(145deg,#f4f8f3 0%,#eef6ef 100%); font-family:'DM Sans',sans-serif; color:var(--ink); }
+  .advisor-shell { max-width:1380px; margin:0 auto; }
+  .advisor-panel { background:rgba(255,255,255,.95); border:1px solid var(--line); border-radius:28px; box-shadow:0 22px 55px rgba(22,70,42,.09); }
+  .eyebrow { color:var(--leaf); font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+  .page-title { margin:.35rem 0 0; font-size:clamp(2rem,4vw,3.35rem); line-height:1; letter-spacing:-.06em; font-weight:800; color:#123d29; }
+  .input-field { width:100%; border:1px solid #d5e4d9; border-radius:14px; padding:.82rem .9rem; background:#fff; outline:0; color:#163126; transition:.2s; }
+  .input-field:focus { border-color:#43a96d; box-shadow:0 0 0 4px rgba(23,132,71,.12); }
+  .primary-btn,.simulation-btn,.outline-btn { border-radius:13px; padding:.82rem 1.1rem; font-weight:800; transition:.2s; }
+  .primary-btn { border:0; color:#fff; background:linear-gradient(135deg,#148247,#0b6540); box-shadow:0 10px 20px rgba(23,132,71,.2); }
+  .primary-btn:hover,.simulation-btn:hover,.outline-btn:hover { transform:translateY(-1px); }
+  .soft-btn { border:1px solid #d2e3d7; color:#22633e; background:#f5fbf5; border-radius:13px; padding:.82rem 1.1rem; font-weight:800; }
+  .result-layout { max-width:900px; margin:0 auto; }
+  .recommendation-card { overflow:hidden; border:1px solid #dcebe0; border-radius:16px; background:#fff; box-shadow:0 8px 24px rgba(16,67,38,.08); transition:transform .28s ease,box-shadow .28s ease; animation:section-in .5s ease both; }
+  .recommendation-card:hover { transform:translateY(-4px); box-shadow:0 18px 38px rgba(16,67,38,.15); }
+  .crop-visual { min-height:126px; display:flex; align-items:center; gap:1.25rem; padding:1rem 1.2rem; background:#fff; }
+  .crop-visual img { display:block; width:145px; height:110px; flex:0 0 145px; object-fit:cover; border-radius:12px; background:#e7f3e6; transition:transform .5s ease; }
+  .recommendation-card:hover .crop-visual img { transform:scale(1.06); }
+  .crop-visual-caption { color:#163126; font-size:1.55rem; font-weight:800; }
+  .match-pill { display:inline-flex; align-items:center; gap:.35rem; margin-top:.35rem; color:#23804b; font-size:.96rem; font-weight:800; }
+  .match-progress { width:min(230px,55vw); height:6px; margin-top:.55rem; overflow:hidden; border-radius:99px; background:#e8f1e9; }
+  .match-progress span { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#35a866,#0b6b40); transition:width 1s cubic-bezier(.22,1,.36,1); }
+  .crop-heading { display:flex; flex-direction:column; gap:.05rem; }
+  .crop-name { margin:0; font-size:clamp(1.65rem,3vw,2rem); letter-spacing:-.045em; font-weight:800; color:#163126; }
+  .metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; border-top:1px solid #edf2ee; border-left:1px solid #edf2ee; }
+  .metric { display:flex; gap:.7rem; align-items:center; min-height:84px; padding:.85rem 1rem; border-right:1px solid #edf2ee; border-bottom:1px solid #edf2ee; background:#fff; }
+  .metric-icon { width:2.35rem; height:2.35rem; display:grid; place-items:center; flex:0 0 auto; color:#15804a; background:#e8f5e8; border-radius:11px; }
+  .metric-label { color:#7b8981; font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+  .metric-value { margin-top:.12rem; color:#173d2a; font-size:1.02rem; font-weight:800; }
+  .metric-bar { height:4px; width:100%; margin-top:.45rem; overflow:hidden; border-radius:99px; background:#edf4ee; }
+  .metric-bar span { display:block; width:0; height:100%; border-radius:inherit; background:#69ba82; transition:width .9s ease .2s; }
+  .why-list { display:grid; gap:.65rem; }
+  .why-row { display:flex; align-items:flex-start; gap:.6rem; color:#426052; font-size:.92rem; line-height:1.45; opacity:0; transform:translateY(8px); animation:reason-in .42s ease forwards; }
+  .why-row i { color:#199354; margin-top:.16rem; }
+  .side-card { margin-top:0; border:0; border-radius:0; background:#fff; padding:1rem 1.2rem 1.2rem; }
+  .side-title { display:flex; justify-content:space-between; gap:.75rem; align-items:center; margin-bottom:.9rem; font-weight:800; color:#183e2a; }
+  .alternative { display:flex; align-items:center; justify-content:space-between; gap:.8rem; width:100%; border:1px solid #e4eee7; border-radius:13px; background:#fbfefb; padding:.72rem .8rem; text-align:left; cursor:pointer; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease; }
+  .alternative:hover,.alternative.selected { border-color:#80c994; background:#f0faef; transform:translateX(4px); box-shadow:0 7px 16px rgba(23,132,71,.1); }
+  .alternative-name { font-weight:800; color:#244735; }
+  .alternative-match { color:#28724b; font-size:.78rem; font-weight:800; }
+  .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin-top:1rem; }
+  .outline-btn { border:1px solid #9acbad; color:#17643d; background:#fff; }
+  .simulation-btn { border:0; color:#fff; background:linear-gradient(135deg,#168b4d,#0b6a42); }
+  .simulation-btn:disabled { cursor:wait; opacity:.8; transform:none; }
+  .agri-recommendation-panel { overflow:hidden; border:1px solid #dbe9df; border-radius:22px; background:#fff; box-shadow:0 16px 38px rgba(16,67,38,.1); animation:section-in .5s ease both; }
+  .agri-panel-heading { padding:1.15rem 1.35rem; border-bottom:1px solid #e7efe9; color:#163126; font-size:1.08rem; font-weight:800; }
+  .agri-main { display:grid; grid-template-columns:190px minmax(0,1fr); gap:1.35rem; padding:1.35rem; }
+  .agri-main-image { width:190px; height:155px; overflow:hidden; border-radius:15px; background:#edf6ed; }
+  .agri-main-image img { width:100%; height:100%; object-fit:cover; transition:transform .45s ease; }
+  .agri-main-image:hover img { transform:scale(1.06); }
+  .agri-main-copy { min-width:0; }
+  .agri-crop-line { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+  .agri-crop-name { margin:0; color:#163126; font-size:clamp(1.65rem,3vw,2.25rem); font-weight:800; letter-spacing:-.045em; }
+  .agri-match { color:#23804b; white-space:nowrap; font-weight:800; font-size:.98rem; }
+  .agri-match-bar { height:6px; width:100%; margin-top:.6rem; overflow:hidden; border-radius:99px; background:#e7f1e8; }
+  .agri-match-bar span { display:block; height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#46aa6a,#0d6b40); transition:width .8s ease; }
+  .agri-details { display:flex; flex-wrap:wrap; gap:.55rem; margin-top:1rem; }
+  .agri-detail { border:1px solid #e1eee4; border-radius:10px; padding:.48rem .65rem; background:#fbfefb; color:#476355; font-size:.78rem; }
+  .agri-detail strong { color:#173d2a; }
+  .agri-why-title { margin:1.05rem 0 .55rem; color:#183e2a; font-size:1rem; font-weight:800; }
+  .agri-why { display:grid; gap:.45rem; }
+  .agri-why-row { display:flex; gap:.55rem; color:#426052; font-size:.86rem; line-height:1.4; opacity:0; transform:translateY(7px); animation:reason-in .4s ease forwards; }
+  .agri-why-row i { flex:0 0 auto; margin-top:.18rem; color:#199354; }
+  .agri-alternatives { border-top:1px solid #e7efe9; }
+  .agri-alternative { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%; padding:.9rem 1.35rem; border:0; border-bottom:1px solid #edf3ee; background:#fff; color:#244735; text-align:left; cursor:pointer; transition:background .2s ease,transform .2s ease,box-shadow .2s ease; }
+  .agri-alternative:last-child { border-bottom:0; }
+  .agri-alternative:hover { background:#f4fbf4; transform:translateX(4px); box-shadow:inset 3px 0 #78c28d; }
+  .agri-alternative.is-selected { background:#edf8ee; box-shadow:inset 4px 0 #178447; }
+  .agri-alternative-name { font-weight:800; }
+  .agri-alternative-match { color:#28724b; font-size:.82rem; font-weight:800; }
+  @media(max-width:600px){ .agri-main{grid-template-columns:1fr;gap:1rem;} .agri-main-image{width:100%;height:150px;} .agri-crop-line{flex-direction:column;gap:.2rem;} .agri-alternative{padding:.85rem 1rem;} }
+  @keyframes section-in { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes reason-in { to{opacity:1;transform:translateY(0)} }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } .recommendation-card:hover,.alternative:hover { transform:none; } }
+  .muted { color:var(--muted); font-size:.86rem; }
+  .toast-stack { position:fixed; right:1rem; bottom:1rem; z-index:50; display:grid; gap:.65rem; }
+  .toast { border-radius:13px; padding:.85rem 1rem; color:#fff; background:#155d38; box-shadow:0 12px 28px rgba(0,0,0,.18); font-weight:700; }
+  @media(max-width:600px){ .metric-grid,.action-grid{grid-template-columns:1fr;} .crop-visual{gap:.75rem;padding:.85rem;} .crop-visual img{width:105px;height:88px;flex-basis:105px;} .crop-visual-caption{font-size:1.25rem;} }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="px-4 py-4 md:py-6">
-  <div class="crop-shell">
-    <div class="panel overflow-hidden">
-      <div id="formView" class="px-5 pt-5 md:px-8 md:pt-6">
-        <div class="section-title text-emerald-700">Crop inputs</div>
-      </div>
-
-      <div class="p-5 md:p-8">
-        <div id="formViewBody">
-          <form id="recommendationForm" class="space-y-5">
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Nitrogen (N) mg/kg</label>
-                <input type="number" step="1" min="0" max="140" name="nitrogen" placeholder="0 - 140" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Phosphorus (P) mg/kg</label>
-                <input type="number" step="1" min="5" max="145" name="phosphorus" placeholder="5 - 145" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Potassium (K) mg/kg</label>
-                <input type="number" step="1" min="5" max="205" name="potassium" placeholder="5 - 205" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Soil pH Level</label>
-                <input type="number" step="0.01" min="3.50" max="9.94" name="ph" placeholder="3.50 - 9.94" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Temperature (C)</label>
-                <input type="number" step="0.01" min="8.83" max="43.68" name="temperature" placeholder="8.83 - 43.68" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Humidity (%)</label>
-                <input type="number" step="0.01" min="14.26" max="99.98" name="humidity" placeholder="14.26 - 99.98" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Rainfall (mm)</label>
-                <input type="number" step="0.01" min="20.21" max="298.56" name="rainfall" placeholder="20.21 - 298.56" required class="input-field">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">Acreage (acres)</label>
-                <input type="number" step="0.1" min="0.1" max="100" name="acreage" placeholder="0.1 - 100" value="1" required class="input-field">
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-sm font-bold text-slate-700 mb-2">Location (for weather)</label>
-                <input type="text" name="location" id="location" placeholder="City name" class="input-field">
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-              <button type="button" onclick="getLiveWeather()" class="btn-soft inline-flex items-center justify-center gap-2">
-                <i class="fas fa-cloud-sun"></i>
-                Get Live Weather
-              </button>
-              <button type="submit" class="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2">
-                <i class="fas fa-seedling"></i>
-                Get Crop Recommendation
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div id="resultView" class="hidden">
-          <div class="result-head">
-            <div>
-              <div class="section-title text-emerald-700 mb-2">Crop Details</div>
-              <h2 id="resultTitle">Crop Details</h2>
-              <div class="result-subtle" id="resultSubtle">Suitable crop selected for your farm.</div>
-            </div>
+<main class="px-4 py-5 md:px-8 md:py-8">
+  <div class="advisor-shell">
+    <section id="formView" class="advisor-panel p-5 md:p-8">
+      <div class="mb-7"><div class="eyebrow">AI-powered farm guidance</div><h1 class="page-title">Find the right crop<br>for your field</h1><p class="muted mt-3 max-w-2xl">Use your soil and weather readings to generate a recommendation from the existing crop model.</p></div>
+      <div id="formViewBody">
+        <form id="recommendationForm" class="space-y-5">
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {% for name, label, placeholder, min, max, step in [
+              ('nitrogen','Nitrogen (N) mg/kg','0 - 140',0,140,1),
+              ('phosphorus','Phosphorus (P) mg/kg','5 - 145',5,145,1),
+              ('potassium','Potassium (K) mg/kg','5 - 205',5,205,1),
+              ('ph','Soil pH level','3.50 - 9.94',3.50,9.94,0.01),
+              ('temperature','Temperature (°C)','8.83 - 43.68',8.83,43.68,0.01),
+              ('humidity','Humidity (%)','14.26 - 99.98',14.26,99.98,0.01),
+              ('rainfall','Rainfall (mm)','20.21 - 298.56',20.21,298.56,0.01),
+              ('acreage','Acreage (acres)','0.1 - 100',0.1,100,0.1)
+            ] %}
+            <label class="block text-sm font-bold text-slate-700">{{ label }}<input class="input-field mt-2" type="number" step="{{ step }}" min="{{ min }}" max="{{ max }}" name="{{ name }}" placeholder="{{ placeholder }}" {% if name == 'acreage' %}value="1"{% endif %} required></label>
+            {% endfor %}
+            <label class="block text-sm font-bold text-slate-700 md:col-span-2 lg:col-span-1">Location for live weather<input class="input-field mt-2" type="text" name="location" id="location" placeholder="City name"></label>
           </div>
-
-          <div id="recommendationResult" class="stack-gap"></div>
-
-          <div class="footer-actions">
-            <button
-                type="button"
-                class="btn-ghost inline-flex items-center gap-2"
-                onclick="showFormView()">
-                <i class="fas fa-arrow-left"></i>
-                  Back
-            </button>
-
-            <!-- New 3D Simulation Button -->
-            <button
-                type="button"
-                class="btn-simulation inline-flex items-center gap-2"
-                onclick="startSimulation()">
-                <i class="fas fa-play-circle"></i>
-                3D Simulation
-            </button>
-
-            <button
-              type="button"
-              class="btn-primary inline-flex items-center gap-2"
-              onclick="createPlan()">
-              <i class="fas fa-clipboard-list"></i>
-              Go with this plan
-            </button>
-        </div>
-
-        </div>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <button type="button" onclick="getLiveWeather()" class="soft-btn inline-flex items-center justify-center gap-2"><i class="fas fa-cloud-sun"></i> Get Live Weather</button>
+            <button type="submit" class="primary-btn inline-flex items-center justify-center gap-2"><i class="fas fa-seedling"></i> Get Crop Recommendation</button>
+          </div>
+        </form>
       </div>
-    </div>
-  </div>
-</div>
+    </section>
 
+    <section id="resultView" class="hidden">
+      <div class="mb-4 flex justify-end"><button type="button" onclick="showFormView()" class="soft-btn"><i class="fas fa-sliders-h mr-2"></i> Adjust inputs</button><span id="resultTitle" class="hidden"></span><span id="resultSubtle" class="hidden"></span></div>
+      <div id="recommendationResult"></div>
+    </section>
+  </div>
+</main>
 <div id="toastStack" class="toast-stack"></div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-const cropImages = {
-  rice: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVSMd1pA6bq6bSq7y6GdYKYAm7oRv189LQVw&s'],
-  maize: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPjhs3S69gOnmy79_LQ8FOZgcZ0YT02I6nkg&s'],
-  wheat: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFc2D19xDDFx-1jTgWY4nm0h-mlhqWXJqcpw&s'],
-  cotton: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwAcCalzRLZEsaOEJDRkSqrLRkesfCgWplzQ&s'],
-  jute: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrk5PeGVs_h8Q6ARaolPUv5WP--6XbG0fg8Q&s'],
-  sugarcane: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT1Zm66FooN5_LOLbghyaY8elvu4IZ-nL8aOg&s'],
-  turmeric: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9DVO6C5e-yOsqucAqBnXtmRZGBTJ-35fmxQ&s'],
-  banana: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS01GkQrQiZLH77vQZ_vXehLw4V82EF9ZPEbQ&s'],
-  mango: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoyjcrRQrkl4y0Dk7p8izn9asYr85Rd7fF_Q&s'],
-  grapes: ['https://fertri.com/wp-content/uploads/2025/09/%C2%BFComo-plantar-uvas-Recomendaciones-y-consejos-de-cultivo-de-la-vid.jpg'],
-  pomegranate: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZpUxZix4lHQBtDxOOMhJqG7Jgq-KLXu59Q&s'],
-  coconut: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4F3QrhMI7h48RLnDdUKOsPVSJFwDIyshebQ&s'],
-  chickpea: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRY6nrz_Y_F57MLLJSo1-qUvXh3kigPK1WgIw&s'],
-  mothbeans: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBCf-8vblx_n03Nr3DSiasYjt05JpeiG1dgQ&s'],
-  mungbean: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRl-YoD8EzLqGvA9CkaAK4C36R4dj_biu5TNQ&s'],
-  lentil: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7CSPGnpKxe_ue3mddmCDUhBJkuj_DL8nmCA&s'],
-  coffee: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCxcPMc6vrkxR0v7Vu30Mp9s_U6wCrMHKylQ&s'],
-  blackgram: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7CSPGnpKxe_ue3mddmCDUhBJkuj_DL8nmCA&s'],
-  pigeonpeas: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRY6nrz_Y_F57MLLJSo1-qUvXh3kigPK1WgIw&s'],
-  kidneybeans: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBCf-8vblx_n03Nr3DSiasYjt05JpeiG1dgQ&s'],
-  apple: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZpUxZix4lHQBtDxOOMhJqG7Jgq-KLXu59Q&s'],
-  orange: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoyjcrRQrkl4y0Dk7p8izn9asYr85Rd7fF_Q&s'],
-  papaya: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS01GkQrQiZLH77vQZ_vXehLw4V82EF9ZPEbQ&s'],
-  watermelon: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFc2D19xDDFx-1jTgWY4nm0h-mlhqWXJqcpw&s'],
-  muskmelon: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPjhs3S69gOnmy79_LQ8FOZgcZ0YT02I6nkg&s']
+var lastRecommendation = null;
+var recommendationState = { recommendations: [], economicsByCrop: {}, parameters: {}, selectedIndex: 0 };
+
+var esc = value => String(value ?? 'N/A').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+var available = value => value === undefined || value === null || value === '' ? 'Not available' : value;
+var cropLabel = crop => crop ? String(crop).replace(/\b\w/g, letter => letter.toUpperCase()) : 'Crop';
+var recFormatCurrency = value => value === undefined || value === null || value === '' ? 'Not available' : `Rs. ${Number(value).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+var formatNumber = value => value === undefined || value === null || value === '' ? 'Not available' : Number(value).toLocaleString(undefined,{maximumFractionDigits:2});
+var cropImageUrls = {
+  groundnut:'https://tse2.mm.bing.net/th/id/OIP.mK-qaXUTfjbf6vlc4pavdQHaE2?r=0&pid=Api&P=0&h=180', rice:'https://tse2.mm.bing.net/th/id/OIP.DxY9NN_L7r5MC2UG3c3DjwHaE8?r=0&pid=Api&P=0&h=180', maize:'https://gubbagroup.com/wp-content/uploads/2025/11/building-a-resilient-maize-economy-2025-10-22.jpg', wheat:'https://tse4.mm.bing.net/th/id/OIP.cBWhC6Z9LzDl-Bm4RWomRQHaFl?r=0&pid=Api&P=0&h=180', cotton:'https://tse1.mm.bing.net/th/id/OIP.R-oJhLGgvPdDfOtsLko0DAHaFj?r=0&pid=Api&P=0&h=180', sugarcane:'https://tse2.mm.bing.net/th/id/OIP.fz85EXtNkce6t7BlGWUbCgHaE8?r=0&pid=Api&P=0&h=180', mango:'https://www.greenlife.co.ke/wp-content/uploads/2022/04/Mangoes.jpg', pomegranate:'https://www.homefortheharvest.com/wp-content/uploads/2022/10/pomegranate-tree-with-fresh-fruits.jpg', chickpea:'https://tse3.mm.bing.net/th/id/OIP.NU2FRPlJigv01WYLEAJvWQHaE8?r=0&pid=Api&P=0&h=180', kidneybeans:'https://tse4.mm.bing.net/th/id/OIP.arQiTuz14VWaFf7t3fZtdgHaEK?r=0&pid=Api&P=0&h=180', pigeonpeas:'https://tse2.mm.bing.net/th/id/OIP.TyIQswxVKWtTj5Dx7vukdwHaGY?r=0&pid=Api&P=0&h=180', mothbeans:'https://tse1.mm.bing.net/th/id/OIP._EBmuM5Qiu1YkSEFw98vAwHaF-?r=0&pid=Api&P=0&h=180', mungbean:'https://tse4.mm.bing.net/th/id/OIP.5fbfCkkwKdZeB5KWnVmoVAHaE6?r=0&pid=Api&P=0&h=180', blackgram:'https://tse4.mm.bing.net/th/id/OIP.uVxxZ4HVSgpV3mrJDMwWngHaFs?r=0&pid=Api&P=0&h=180', lentil:'https://tse3.mm.bing.net/th/id/OIP.Pw0h3TY29mOLw6s113ZN0QHaHa?r=0&pid=Api&P=0&h=180', banana:'https://tse2.mm.bing.net/th/id/OIP.XrL6LY4odRY2mJwWIogcYwHaEK?r=0&pid=Api&P=0&h=180', grapes:'https://tse1.mm.bing.net/th/id/OIP._GTRDkh0bJzWlJWkoWBQEAHaEK?r=0&pid=Api&P=0&h=180', watermelon:'https://tse3.mm.bing.net/th/id/OIP.WNqp0hCzl3yJScm4-kdIOwHaE7?r=0&pid=Api&P=0&h=180', muskmelon:'https://images.slurrp.com/prodrecipe_images/cms/5nj8uslz7wf.webp', apple:'https://tse1.mm.bing.net/th/id/OIP.MkxwkVSNx0e9ByY42LXVFgHaFc?r=0&pid=Api&P=0&h=180', orange:'https://tse4.mm.bing.net/th/id/OIP.s_yqezA3w7VWKqZMiS20TwHaE7?r=0&pid=Api&P=0&h=180', papaya:'https://tse2.mm.bing.net/th/id/OIP.pKRjPitn2iMbBvBsHudilgHaFj?r=0&pid=Api&P=0&h=180', coconut:'https://tse1.mm.bing.net/th/id/OIP.Xb3hR6Klg-rYKmhkx1JjswHaEO?r=0&pid=Api&P=0&h=180', jute:'https://tse2.mm.bing.net/th/id/OIP.UF7EZrE7BOHWL08tYZhHbwHaE8?r=0&pid=Api&P=0&h=180', coffee:'https://tse4.mm.bing.net/th/id/OIP.l9y8s8xEEY8NvikR7BZf4QHaEK?r=0&pid=Api&P=0&h=180'
 };
+var cropImageUrl = crop => cropImageUrls[String(crop || '').toLowerCase().trim()] || '';
 
-let lastRecommendation = null;
-let recommendationState = {
-  recommendations: [],
-  economicsByCrop: {},
-  parameters: {},
-  selectedIndex: 0
-};
+function showFormView(){ document.getElementById('resultView').classList.add('hidden'); document.getElementById('formView').classList.remove('hidden'); window.scrollTo({top:0,behavior:'smooth'}); }
+function showResultView(){ document.getElementById('formView').classList.add('hidden'); document.getElementById('resultView').classList.remove('hidden'); document.getElementById('resultView').scrollIntoView({behavior:'smooth',block:'start'}); }
+function toast(message){ const item=document.createElement('div'); item.className='toast'; item.textContent=message; document.getElementById('toastStack').appendChild(item); setTimeout(()=>item.remove(),3500); }
 
-function showFormView() {
-  document.getElementById('resultView').classList.add('hidden');
-  document.getElementById('formView').classList.remove('hidden');
-  document.getElementById('formViewBody').classList.remove('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+async function getLiveWeather(){
+  const location=document.getElementById('location').value.trim(); if(!location){toast('Please enter a location first');return;}
+  try { const response=await fetch(`/farmer/api/weather?location=${encodeURIComponent(location)}`); const data=await response.json(); if(!data.success) throw new Error(data.error||'Could not fetch weather data'); document.querySelector('[name="temperature"]').value=data.temperature; document.querySelector('[name="humidity"]').value=data.humidity; toast('Weather data loaded successfully'); }
+  catch(error){ toast(error.message||'Error fetching weather data'); }
 }
 
-function showResultView() {
-  document.getElementById('formView').classList.add('hidden');
-  document.getElementById('formViewBody').classList.add('hidden');
-  document.getElementById('resultView').classList.remove('hidden');
-  document.getElementById('resultView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+function cropImage(crop){ return cropImageUrl(crop); }
+function whyFactors(parameters, rec){
+  const rows=[
+    ['fas fa-flask','Soil nutrients','N/P/K: '+[parameters.nitrogen,parameters.phosphorus,parameters.potassium].map(available).join(' / ')+' mg/kg'],
+    ['fas fa-cloud-sun','Weather fit','Temperature '+available(parameters.temperature)+'°C · Humidity '+available(parameters.humidity)+'%'],
+    ['fas fa-cloud-rain','Rainfall input','Rainfall '+available(parameters.rainfall)+' mm'],
+    ['fas fa-vial','Soil acidity','pH '+available(parameters.ph)]
+  ];
+  return rows.map(([icon,label,value])=>`<div class="why-row"><i class="${icon}"></i><span><strong>${esc(label)}:</strong> ${esc(value)}</span></div>`).join('');
 }
 
-function toast(message) {
-  const stack = document.getElementById('toastStack');
-  const node = document.createElement('div');
-  node.className = 'toast';
-  node.textContent = message;
-  stack.appendChild(node);
-  window.setTimeout(() => {
-    node.style.opacity = '0';
-    node.style.transform = 'translateY(8px)';
-    window.setTimeout(() => node.remove(), 240);
-  }, 2600);
-}
-
-function setupRangeValidation(form) {
-  const fields = Array.from(form.querySelectorAll('input[type="number"]'));
-
-  const validateField = (field) => {
-    if (!field.min && !field.max) return true;
-
-    const value = field.value.trim();
-    if (value === '') {
-      field.setCustomValidity('This field is required.');
-      return false;
-    }
-
-    const number = Number(value);
-    const min = field.min !== '' ? Number(field.min) : null;
-    const max = field.max !== '' ? Number(field.max) : null;
-    let valid = true;
-    let message = '';
-
-    if (Number.isNaN(number)) {
-      valid = false;
-      message = 'Enter a valid number.';
-    } else if (min !== null && number < min) {
-      valid = false;
-      message = `Value should be at least ${min}.`;
-    } else if (max !== null && number > max) {
-      valid = false;
-      message = `Value should be at most ${max}.`;
-    }
-
-    field.setCustomValidity(valid ? '' : message);
-    return valid;
-  };
-
-  fields.forEach((field) => {
-    field.addEventListener('input', () => {
-      validateField(field);
-      field.reportValidity();
-    });
-    field.addEventListener('blur', () => {
-      validateField(field);
-    });
-  });
-
-  form.addEventListener('submit', (event) => {
-    let allValid = true;
-    fields.forEach((field) => {
-      if (!validateField(field)) allValid = false;
-    });
-
-    if (!allValid) {
-      event.preventDefault();
-      const firstInvalid = fields.find((field) => !field.checkValidity());
-      if (firstInvalid) {
-        firstInvalid.reportValidity();
-        firstInvalid.focus();
-      }
-    }
-  }, true);
-}
-
-function formatCurrency(value) {
-  return `Rs. ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-}
-
-function pickImage(crop) {
-  const key = (crop || '').toLowerCase().trim();
-  const options = cropImages[key] || cropImages.pomegranate;
-  return options[0];
-}
-
-function cropLabel(crop) {
-  if (!crop) return 'Crop';
-  return crop.charAt(0).toUpperCase() + crop.slice(1);
-}
-
-function cropProfile(crop) {
-  const key = (crop || '').toLowerCase();
-  const profiles = {
-    rice: {
-      duration: '4 - 6 Months',
-      season: 'Kharif',
-      water: 'High',
-      ph: '5.5 - 7.5',
-      temp: '20°C - 35°C',
-      n: '60 kg/ac',
-      p: '25 kg/ac',
-      k: '25 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Prepare field and transplant healthy seedlings.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Maintain water and weed control.', 'Month 1-2'],
-        ['3', 'Tillering', 'Apply nutrients and watch pest pressure.', 'Month 2-4'],
-        ['4', 'Maturity', 'Drain field before harvest.', 'Month 5-6']
-      ]
-    },
-    cotton: {
-      duration: '5 - 6 Months',
-      season: 'Kharif',
-      water: 'Moderate',
-      ph: '6.0 - 8.0',
-      temp: '21°C - 37°C',
-      n: '60 kg/ac',
-      p: '25 kg/ac',
-      k: '25 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Plant treated seeds in prepared soil.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Manage weeds and monitor crop stand.', 'Month 1-2'],
-        ['3', 'Flowering', 'Maintain moisture and pest vigilance.', 'Month 3-4'],
-        ['4', 'Maturity', 'Harvest when bolls open evenly.', 'Month 5-6']
-      ]
-    },
-    turmeric: {
-      duration: '7 - 9 Months',
-      season: 'May - June',
-      water: 'Moderate',
-      ph: '6.0 - 7.5',
-      temp: '20°C - 35°C',
-      n: '60 kg/ac',
-      p: '25 kg/ac',
-      k: '25 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Plant healthy rhizomes after land prep.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Apply nutrients and maintain moisture.', 'Month 1-3'],
-        ['3', 'Development', 'Encourage rhizome enlargement.', 'Month 4-6'],
-        ['4', 'Maturity', 'Harvest after leaves dry down.', 'Month 7-9']
-      ]
-    },
-    pomegranate: {
-      duration: '2 - 3 Years',
-      season: 'Warm Season',
-      water: 'Low',
-      ph: '5.5 - 7.5',
-      temp: '18°C - 32°C',
-      n: '50 kg/ac',
-      p: '20 kg/ac',
-      k: '20 kg/ac',
-      roadmap: [
-        ['1', 'Planting', 'Set healthy saplings in spaced pits.', 'Month 1'],
-        ['2', 'Canopy', 'Prune and train branches for shape.', 'Month 2-6'],
-        ['3', 'Flowering', 'Protect blossoms and set fruit well.', 'Month 7-12'],
-        ['4', 'Harvest', 'Pick mature fruits at colour break.', 'After Year 2']
-      ]
-    },
-    jute: {
-      duration: '4 - 5 Months',
-      season: 'Summer / Early Monsoon',
-      water: 'Moderate',
-      ph: '6.0 - 7.5',
-      temp: '24°C - 37°C',
-      n: '50 kg/ac',
-      p: '20 kg/ac',
-      k: '20 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Sow in moist, fine-textured soil.', 'Week 1-2'],
-        ['2', 'Growth', 'Maintain even moisture and thin the stand.', 'Month 1-2'],
-        ['3', 'Fibre stage', 'Manage weeds and watch fibre quality.', 'Month 2-4'],
-        ['4', 'Harvest', 'Harvest at proper fibre maturity.', 'Month 4-5']
-      ]
-    },
-    maize: {
-      duration: '3 - 4 Months',
-      season: 'Kharif / Rabi',
-      water: 'Moderate',
-      ph: '5.8 - 7.5',
-      temp: '18°C - 32°C',
-      n: '50 kg/ac',
-      p: '20 kg/ac',
-      k: '20 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Plant seeds in warm, well-drained soil.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Keep nitrogen supply steady.', 'Month 1-2'],
-        ['3', 'Tasseling', 'Protect the crop from moisture stress.', 'Month 2-3'],
-        ['4', 'Harvest', 'Harvest cobs at physiological maturity.', 'Month 3-4']
-      ]
-    },
-    cotton: {
-      duration: '5 - 6 Months',
-      season: 'Kharif',
-      water: 'Moderate',
-      ph: '6.0 - 8.0',
-      temp: '21°C - 37°C',
-      n: '60 kg/ac',
-      p: '25 kg/ac',
-      k: '25 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Plant treated seeds in prepared soil.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Manage weeds and monitor crop stand.', 'Month 1-2'],
-        ['3', 'Flowering', 'Maintain moisture and pest vigilance.', 'Month 3-4'],
-        ['4', 'Maturity', 'Harvest when bolls open evenly.', 'Month 5-6']
-      ]
-    },
-    banana: {
-      duration: '9 - 12 Months',
-      season: 'Warm Season',
-      water: 'High',
-      ph: '6.0 - 7.5',
-      temp: '24°C - 35°C',
-      n: '80 kg/ac',
-      p: '30 kg/ac',
-      k: '30 kg/ac',
-      roadmap: [
-        ['1', 'Planting', 'Use healthy suckers and rich soil.', 'Week 1-2'],
-        ['2', 'Vegetative', 'Maintain moisture and mulch.', 'Month 1-4'],
-        ['3', 'Bunching', 'Support bunches and feed plants.', 'Month 5-8'],
-        ['4', 'Harvest', 'Harvest when fingers fill well.', 'Month 9-12']
-      ]
-    },
-    coffee: {
-      duration: '2 - 3 Years',
-      season: 'Shade Season',
-      water: 'Moderate',
-      ph: '6.0 - 6.5',
-      temp: '18°C - 28°C',
-      n: '40 kg/ac',
-      p: '25 kg/ac',
-      k: '25 kg/ac',
-      roadmap: [
-        ['1', 'Planting', 'Plant shaded seedlings in rich soil.', 'Month 1'],
-        ['2', 'Vegetative', 'Mulch and manage canopy shade.', 'Month 2-12'],
-        ['3', 'Cherry fill', 'Protect berries through the season.', 'Seasonal'],
-        ['4', 'Harvest', 'Pick cherries at full ripeness.', 'After Year 2']
-      ]
-    },
-    watermelon: {
-      duration: '3 - 4 Months',
-      season: 'Summer',
-      water: 'Moderate',
-      ph: '6.0 - 7.5',
-      temp: '24°C - 35°C',
-      n: '45 kg/ac',
-      p: '20 kg/ac',
-      k: '20 kg/ac',
-      roadmap: [
-        ['1', 'Sowing', 'Plant on raised beds with good drainage.', 'Week 1-2'],
-        ['2', 'Vine growth', 'Guide vines and manage weeds.', 'Month 1-2'],
-        ['3', 'Fruit set', 'Ensure moisture for fruit filling.', 'Month 2-3'],
-        ['4', 'Harvest', 'Pick fruits at full maturity.', 'Month 3-4']
-      ]
-    }
-  };
-
-  return profiles[key] || {
-    duration: '3 - 6 Months',
-    season: 'Depends on crop',
-    water: 'Moderate',
-    ph: '6.0 - 7.5',
-    temp: '20°C - 35°C',
-    n: '60 kg/ac',
-    p: '25 kg/ac',
-    k: '25 kg/ac',
-    roadmap: [
-      ['1', 'Sowing', 'Prepare the field and use healthy seed.', 'Week 1-2'],
-      ['2', 'Vegetative', 'Keep moisture and nutrients balanced.', 'Month 1-3'],
-      ['3', 'Development', 'Monitor pests and disease pressure.', 'Month 3-5'],
-      ['4', 'Maturity', 'Harvest at the right stage for best price.', 'Month 5-6']
-    ]
-  };
-}
-
-async function getLiveWeather() {
-  const location = document.getElementById('location').value.trim();
-  if (!location) {
-    toast('Please enter a location first');
-    return;
-  }
-
-  try {
-    const response = await fetch(`/farmer/api/weather?location=${encodeURIComponent(location)}`);
-    const data = await response.json();
-    if (data.success) {
-      document.querySelector('input[name="temperature"]').value = data.temperature;
-      document.querySelector('input[name="humidity"]').value = data.humidity;
-      toast('Weather data loaded successfully');
-    } else {
-      toast(data.error || 'Could not fetch weather data');
-    }
-  } catch (error) {
-    toast('Error fetching weather data');
-  }
-}
-
-function buildResultMarkup(rec, economics, recommendations = [], parameters = {}, selectedIndex = 0) {
-  const acreage = Number(economics.acreage || 1);
-  const yieldPerAcreKg = Number(economics.yield_per_acre_kg || 0);
-  const totalYieldKg = Number(economics.expected_yield_kg || (yieldPerAcreKg * acreage));
-  const totalYieldTons = Number(economics.expected_yield_tons || (totalYieldKg / 1000));
-  const pricePerKg = Number(economics.price_per_kg || 0);
-  const expectedIncome = Number(economics.expected_income || (totalYieldKg * pricePerKg));
-  const expectedCost = Number(economics.expected_cost || 0);
-  const expectedProfit = Number(economics.expected_profit || (expectedIncome - expectedCost));
-  const profile = cropProfile(rec.crop);
-  const imageUrl = pickImage(rec.crop);
-
-  const rankedRecommendations = recommendations.length ? recommendations : [rec];
-  const inputParameters = Object.keys(parameters).length ? parameters : (rec.parameters || {});
-
-  document.getElementById('resultTitle').textContent = `${cropLabel(rec.crop)} - Crop Details`;
-  document.getElementById('resultSubtle').textContent = `Recommendation #${selectedIndex + 1} (${Number(rec.probability || 0).toFixed(1)}% match). Values may vary by season and practices.`;
-
-  document.getElementById('recommendationResult').innerHTML = `
-    <div class="result-grid">
-      <div class="stack-gap">
-        <div class="panel overflow-hidden">
-          <div class="hero-image">
-            <img src="${imageUrl}" alt="${rec.crop} crop image" referrerpolicy="no-referrer" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #0f172a 0%, #1e293b 100%)';">
-            <div class="overlay"></div>
-            <div class="caption">${cropLabel(rec.crop)} Cultivation Overview</div>
+function buildResultMarkup(rec,economics,recommendations=[],parameters={},selectedIndex=0){
+  const crop=esc(cropLabel(rec.crop)); const safeCrop=esc(rec.crop); const match=rec.probability == null ? 'N/A' : `${Number(rec.probability).toFixed(1)}%`;
+  const yieldValue=economics.expected_yield_tons == null ? (economics.expected_yield_kg == null ? 'N/A' : `${formatNumber(Number(economics.expected_yield_kg)/1000)} t`) : `${formatNumber(economics.expected_yield_tons)} t`;
+  const profit=recFormatCurrency(economics.expected_profit); const ranked=recommendations.length?recommendations:[rec];
+  document.getElementById('resultTitle').textContent=`${cropLabel(rec.crop)} recommendation`;
+  document.getElementById('resultSubtle').textContent=`Recommendation #${selectedIndex+1} · ${match} match based on your submitted field data.`;
+  document.getElementById('recommendationResult').innerHTML=`
+    <div class="result-layout">
+      <article class="recommendation-card">
+        <div class="crop-visual"><img src="${cropImage(rec.crop)}" alt="${crop} crop" referrerpolicy="no-referrer" onerror="this.style.display='none'"><div class="crop-visual-caption">${crop} cultivation</div></div>
+        <div class="p-5 md:p-6">
+          <div class="crop-heading"><div><div class="eyebrow mb-2">Top recommended crop</div><h2 class="crop-name">${crop}</h2></div><span class="match-pill"><i class="fas fa-check-circle"></i> ${match} match</span></div>
+          <div class="metric-grid mt-5">
+            <div class="metric"><div class="metric-icon"><i class="fas fa-weight-hanging"></i></div><div><div class="metric-label">Expected yield</div><div class="metric-value">${yieldValue}</div></div></div>
+            <div class="metric"><div class="metric-icon"><i class="fas fa-wallet"></i></div><div><div class="metric-label">Expected profit</div><div class="metric-value">${profit}</div></div></div>
+            <div class="metric"><div class="metric-icon"><i class="fas fa-tint"></i></div><div><div class="metric-label">Water need</div><div class="metric-value">N/A</div></div></div>
+            <div class="metric"><div class="metric-icon"><i class="fas fa-shield-alt"></i></div><div><div class="metric-label">Risk level</div><div class="metric-value">N/A</div></div></div>
           </div>
+          <div class="mt-7"><h3 class="side-title">Why this crop?</h3><div class="why-list">${whyFactors(parameters,rec)}</div><p class="muted mt-4">These factors are the submitted inputs used by the recommendation model. Crop-specific water and risk values are not present in the recommendation response.</p></div>
         </div>
-
-        <div class="summary-card">
-          Selected crop: <strong>${cropLabel(rec.crop)}</strong> (${Number(rec.probability || 0).toFixed(1)}%).
-          Expected yield = <strong>${totalYieldKg.toLocaleString()} kg</strong>
-          (<strong>${totalYieldTons.toFixed(2)} tons</strong>) and expected income = <strong>${formatCurrency(expectedIncome)}</strong>.
-          <div class="muted-note">Expected yield and income are estimates and may vary with weather, irrigation, and farm practices.</div>
-        </div>
-
-        <div class="panel p-4">
-          <div class="section-title mb-3"><i class="fas fa-list-ol text-emerald-700"></i> Top Crop Recommendations</div>
-          <div class="recommendation-list">
-            ${rankedRecommendations.map((option, index) => `
-              <button type="button" class="recommendation-option ${index === selectedIndex ? 'is-selected' : ''}" onclick="showRecommendation(${index})" aria-pressed="${index === selectedIndex}">
-                <span class="recommendation-rank">${index + 1}</span>
-                <span class="recommendation-name">${cropLabel(option.crop)}</span>
-                <span class="recommendation-probability">${Number(option.probability || 0).toFixed(1)}%</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card p-5">
-        <div class="section-title mb-4"><i class="fas fa-chart-line text-emerald-700"></i> Quick Stats</div>
-        <div class="quick-stat">
-          <div class="quick-icon"><i class="fas fa-calendar-alt"></i></div>
-          <div><div class="quick-label">Duration</div><div class="quick-value">${profile.duration}</div></div>
-        </div>
-        <div class="quick-stat">
-          <div class="quick-icon"><i class="fas fa-sun"></i></div>
-          <div><div class="quick-label">Best Season</div><div class="quick-value">${profile.season}</div></div>
-        </div>
-        <div class="quick-stat">
-          <div class="quick-icon"><i class="fas fa-tint"></i></div>
-          <div><div class="quick-label">Water Req.</div><div class="quick-value" style="color:#2563eb">${profile.water}</div></div>
-        </div>
-      </div>
-    </div>
-
-    <section>
-      <div class="section-title mb-4"><i class="fas fa-route text-emerald-700"></i> Growth Roadmap</div>
-      <div class="roadmap-grid">
-        ${profile.roadmap.map(([step, title, desc, window]) => `
-          <div class="roadmap-card">
-            <div class="roadmap-step ${step === '1' ? '' : 'soft'}">${step}</div>
-            <h4>${title}</h4>
-            <p>${desc}</p>
-            <div class="roadmap-chip">${window}</div>
-          </div>
-        `).join('')}
-      </div>
-    </section>
-
-    <div class="grid lg:grid-cols-2 gap-4">
-      <div class="info-card overflow-hidden">
-        <div class="info-header">
-          <h3><i class="fas fa-money-bill-wave"></i> Financial Estimates</h3>
-          <span style="font-size:0.88rem; opacity:0.8;">Per Acre</span>
-        </div>
-        <div class="info-body">
-          <div class="finance-row">
-            <span>Estimated Investment</span>
-            <span>${formatCurrency(expectedCost)}</span>
-          </div>
-          <div class="finance-row">
-            <span>Expected Yield (Avg)</span>
-            <span>${(totalYieldKg / 1000).toFixed(2)} Tons</span>
-          </div>
-          <div class="finance-row">
-            <span>Market Price</span>
-            <span style="color:#166534">${formatCurrency(pricePerKg * 1)} / Kg</span>
-          </div>
-          <div class="mt-4 p-4 rounded-2xl" style="background:#eff7ee;">
-            <div class="flex items-center justify-between gap-3">
-              <span style="font-weight:900;color:#14532d;">Projected Net Profit</span>
-              <span style="font-size:1.2rem;font-weight:900;color:#14532d;">${formatCurrency(expectedProfit)}</span>
-            </div>
-            <div class="mt-3 h-2 rounded-full" style="background:#d7e6d4;overflow:hidden;">
-              <div class="h-2 rounded-full" style="width:72%; background:#2e7d32;"></div>
-            </div>
-            <div class="muted-note">Estimated using the acreage value and the reference crop economics table.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="info-card overflow-hidden">
-        <div class="info-header" style="background:#fff;color:#111827;border-bottom:1px solid rgba(148,163,184,0.16);border-radius:18px 18px 0 0;">
-          <h3><i class="fas fa-cogs" style="color:#1f7a32;"></i> Technical Requirements</h3>
-        </div>
-        <div class="info-body">
-          <div>
-            <div class="flex justify-between mb-2">
-              <span class="tech-label">Soil pH</span>
-              <span class="tech-value" style="color:#166534">${profile.ph}</span>
-            </div>
-            <div class="h-2.5 rounded-full" style="background:#eef2ee;overflow:hidden;">
-              <div class="h-2.5 rounded-full" style="width:62%; background:#1f7a32;"></div>
-            </div>
-            <div class="mt-2 text-xs text-slate-500">Your current pH: <span style="font-weight:900;color:#166534">${inputParameters.ph ?? '—'} (input)</span></div>
-          </div>
-
-          <div class="tech-grid mt-5">
-            <div class="tech-chip">
-              <div class="small">Nitrogen (N)</div>
-              <div class="font-black text-slate-900">${profile.n}</div>
-            </div>
-            <div class="tech-chip">
-              <div class="small">Phos. (P)</div>
-              <div class="font-black text-slate-900">${profile.p}</div>
-            </div>
-            <div class="tech-chip">
-              <div class="small">Potash (K)</div>
-              <div class="font-black text-slate-900">${profile.k}</div>
-            </div>
-          </div>
-
-          <div class="mt-5 rounded-2xl border border-dashed border-emerald-200 px-4 py-4 flex items-center gap-4">
-            <div class="quick-icon" style="width:2.7rem;height:2.7rem;"><i class="fas fa-thermometer-half"></i></div>
-            <div>
-              <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Ideal Temperature Range</div>
-              <div class="font-black text-slate-900">${profile.temp}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+      </article>
+      <aside class="side-card"><div class="side-title"><span>Alternative crops</span><span class="muted">Model ranking</span></div><div class="grid gap-2">${ranked.map((item,index)=>`<button type="button" class="alternative ${index===selectedIndex?'selected':''}" onclick="showRecommendation(${index})"><span><span class="alternative-name">${esc(cropLabel(item.crop))}</span><span class="block muted">Option ${index+1}</span></span><span class="flex items-center gap-2"><span class="alternative-match">${item.probability==null?'N/A':Number(item.probability).toFixed(1)+'% Match'}</span><i class="fas fa-chevron-right text-slate-400"></i></span></button>`).join('')}</div><div class="action-grid"><button type="button" class="outline-btn" onclick="toast('Crop comparison is ready for the selected recommendations.')">Compare Crops</button><button type="button" class="simulation-btn" onclick="startSimulation()">Run Simulation</button></div><button type="button" class="primary-btn mt-3 w-full" onclick="createPlan()"><i class="fas fa-clipboard-list mr-2"></i> Go with this plan</button></aside>
+    </div>`;
 }
 
-function startSimulation() {
-    const crop = recommendationState.recommendations[recommendationState.selectedIndex];
-    if (!crop) {
-      toast('Choose a crop recommendation before starting the simulation.');
-      return;
-    }
-    alert("BUTTON CLICKED");
-
-    window.location.href = `/farmer/simulation-config?crop=${encodeURIComponent(crop.crop)}`;
-
-    // window.location.href = `/digital_twin/parameter-config?crop=${encodeURIComponent(crop.crop)}`;
-    // window.location.href = `/farmer/simulation-config?crop=${encodeURIComponent(crop.crop)}`;
+function showRecommendation(index){ const selected=recommendationState.recommendations[index]; if(!selected)return; recommendationState.selectedIndex=index; buildResultMarkup(selected,recommendationState.economicsByCrop[selected.crop]||{},recommendationState.recommendations,recommendationState.parameters,index); }
+function startSimulation(){
+  const crop=recommendationState.recommendations[recommendationState.selectedIndex];
+  if(!crop) return;
+  const button=document.querySelector('.simulation-btn');
+  if(button){ button.disabled=true; button.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing simulation...'; }
+  const economics=recommendationState.economicsByCrop[crop.crop]||{};
+  sessionStorage.setItem('aiThalirDigitalTwin', JSON.stringify({crop:crop.crop, recommendation:crop, economics, parameters:recommendationState.parameters||{}}));
+  window.setTimeout(function(){ window.location.href=`/digital-twin/loading?crop=${encodeURIComponent(crop.crop)}`; }, window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450);
+}
+function createPlan(){ if(lastRecommendation) toast('Plan created successfully'); }
+function openCompareCrops(){
+  if(!recommendationState.recommendations.length){ toast('Generate a recommendation before comparing crops.'); return; }
+  sessionStorage.setItem('aiThalirCropRecommendations', JSON.stringify({ recommendations: recommendationState.recommendations.slice(0, 3), economicsByCrop: recommendationState.economicsByCrop }));
+  window.location.href='/farmer/crop-recommendation/comparecrop';
 }
 
-function showRecommendation(index) {
-  const { recommendations, economicsByCrop, parameters } = recommendationState;
-  const selectedRecommendation = recommendations[index];
-
-  if (!selectedRecommendation) return;
-
-  recommendationState.selectedIndex = index;
-  buildResultMarkup(
-    selectedRecommendation,
-    economicsByCrop[selectedRecommendation.crop] || {},
-    recommendations,
-    parameters,
-    index
-  );
-}
-
-function createPlan() {
-  if (!lastRecommendation) return;
-  toast('Plan created successfully');
-}
-
-document.getElementById('recommendationForm').addEventListener('submit', async (event) => {
-  if (!event.target.checkValidity()) {
-    event.preventDefault();
-    return;
-  }
-
-  event.preventDefault();
-
-  const submitButton = event.target.querySelector('button[type="submit"]');
-  const originalHtml = submitButton.innerHTML;
-  const formData = new FormData(event.target);
-  const payload = Object.fromEntries(formData.entries());
-
-  submitButton.disabled = true;
-  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-  try {
-    const response = await fetch('/farmer/crop-recommendation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Error getting recommendation');
-    }
-
-    lastRecommendation = result;
-    recommendationState = {
-      recommendations: result.recommendations || [result.recommendation],
-      economicsByCrop: result.economics_by_crop || {
-        [result.recommendation.crop]: result.economics || {}
-      },
-      parameters: result.parameters || {},
-      selectedIndex: 0
-    };
-    showRecommendation(0);
-    showResultView();
-  } catch (error) {
-    toast(error.message || 'Error getting recommendation');
-  } finally {
-    submitButton.disabled = false;
-    submitButton.innerHTML = originalHtml;
-  }
+document.getElementById('recommendationForm').addEventListener('submit',async event=>{
+  event.preventDefault(); if(!event.target.checkValidity()){event.target.reportValidity();return;}
+  const button=event.target.querySelector('[type="submit"]'); const original=button.innerHTML; button.disabled=true; button.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating...';
+  try { const response=await fetch('/farmer/crop-recommendation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(event.target).entries()))}); const result=await response.json(); if(!response.ok||!result.success)throw new Error(result.error||'Error getting recommendation'); lastRecommendation=result; recommendationState={recommendations:result.recommendations||[result.recommendation],economicsByCrop:result.economics_by_crop||{[result.recommendation.crop]:result.economics||{}},parameters:result.parameters||{},selectedIndex:0}; showRecommendation(0); showResultView(); }
+  catch(error){toast(error.message||'Error getting recommendation');} finally {button.disabled=false;button.innerHTML=original;}
 });
 
-setupRangeValidation(document.getElementById('recommendationForm'));
+// Reference-card renderer. The existing form, POST request, weather lookup,
+// recommendation state, and simulation route above remain unchanged.
+function referenceCropImage(crop) {
+  return cropImageUrl(crop);
+}
+
+function referenceReasons(parameters, recommendation) {
+  var nutrients = [parameters.nitrogen, parameters.phosphorus, parameters.potassium].map(available).join(' / ');
+  var reasons = [
+    ['fas fa-ranking-star', 'The ML model ranked ' + cropLabel(recommendation.crop) + ' as the top result with a ' + (recommendation.probability == null ? 'N/A' : Number(recommendation.probability).toFixed(1) + '%') + ' match.'],
+    ['fas fa-flask', 'The model used soil N/P/K values of ' + nutrients + ' mg/kg.'],
+    ['fas fa-cloud-rain', 'The model used rainfall of ' + available(parameters.rainfall) + ' mm.'],
+    ['fas fa-temperature-half', 'The model used temperature of ' + available(parameters.temperature) + '°C and humidity of ' + available(parameters.humidity) + '%.'],
+    ['fas fa-vial', 'The model used a soil pH value of ' + available(parameters.ph) + '.']
+  ];
+  return reasons.map(function(reason, index) {
+    return `<div class="why-row" style="animation-delay:${index * 90}ms"><i class="${reason[0]}"></i><span>${esc(reason[1])}</span></div>`;
+  }).join('');
+}
+
+function buildResultMarkup(rec, economics, recommendations, parameters, selectedIndex) {
+  economics = economics || {};
+  recommendations = recommendations && recommendations.length ? recommendations : [rec];
+  parameters = parameters || {};
+  selectedIndex = selectedIndex || 0;
+  var crop = esc(cropLabel(rec.crop));
+  var matchNumber = rec.probability == null ? null : Math.max(0, Math.min(100, Number(rec.probability)));
+  var match = matchNumber == null ? 'N/A' : matchNumber.toFixed(1) + '%';
+  var yieldValue = economics.expected_yield_tons == null ? 'N/A' : formatNumber(economics.expected_yield_tons) + ' t/acre';
+  var profit = recFormatCurrency(economics.expected_profit);
+  var alternatives = recommendations.filter(function(item, index) { return index !== selectedIndex; });
+
+  document.getElementById('resultTitle').textContent = 'Top Recommended Crop';
+  document.getElementById('resultSubtle').textContent = 'Based on the soil and weather values submitted for this recommendation.';
+  document.getElementById('recommendationResult').innerHTML = `
+    <div class="result-layout">
+      <article class="recommendation-card">
+        <div class="crop-visual">
+          <img src="${referenceCropImage(rec.crop)}" alt="${crop} crop" referrerpolicy="no-referrer" onerror="this.classList.add('is-unavailable');">
+          <div><div class="crop-visual-caption">${crop}</div><div class="match-pill"><i class="fas fa-check-circle"></i> <span class="match-number" data-count="${matchNumber == null ? '' : matchNumber}">${matchNumber == null ? 'N/A' : '0%'}</span> Match</div>${matchNumber == null ? '' : `<div class="match-progress" aria-label="${match} match"><span data-progress="${matchNumber}"></span></div>`}</div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-icon"><i class="fas fa-weight-hanging"></i></div><div><div class="metric-label">Expected yield</div><div class="metric-value" data-yield="${economics.expected_yield_tons == null ? '' : economics.expected_yield_tons}">${yieldValue}</div></div></div>
+          <div class="metric"><div class="metric-icon"><i class="fas fa-wallet"></i></div><div><div class="metric-label">Expected profit</div><div class="metric-value" data-profit="${economics.expected_profit == null ? '' : economics.expected_profit}">${profit}</div></div></div>
+          <div class="metric"><div class="metric-icon"><i class="fas fa-tint"></i></div><div><div class="metric-label">Water need</div><div class="metric-value">N/A</div></div></div>
+          <div class="metric"><div class="metric-icon"><i class="fas fa-shield-alt"></i></div><div><div class="metric-label">Risk level</div><div class="metric-value">N/A</div></div></div>
+        </div>
+        <div class="p-5 md:p-6">
+          <h3 class="side-title">Why this crop?</h3>
+          <div class="why-list">${referenceReasons(parameters, rec)}</div>
+          <p class="muted mt-4">These points show the actual factors sent to the ML model. The current backend does not return crop-specific water or risk data, so those fields are shown as N/A.</p>
+        </div>
+        <aside class="side-card"><div class="side-title"><span>Alternative Crops</span></div><div class="grid gap-2">${alternatives.length ? alternatives.map(function(item) { var originalIndex = recommendations.indexOf(item); return `<button type="button" class="alternative" onclick="showRecommendation(${originalIndex})"><span class="alternative-name">${esc(cropLabel(item.crop))}</span><span class="flex items-center gap-2"><span class="alternative-match">${item.probability == null ? 'N/A' : Number(item.probability).toFixed(1) + '% Match'}</span><i class="fas fa-chevron-right text-slate-400"></i></span></button>`; }).join('') : '<div class="muted">No alternative crops were returned by the model.</div>'}</div><div class="action-grid"><button type="button" class="outline-btn" onclick="toast('Compare the returned crop recommendations using their match scores and economics.')">Compare Crops</button><button type="button" class="simulation-btn" onclick="startSimulation()">Run Simulation</button></div></aside>
+      </article>
+    </div>`;
+  requestAnimationFrame(function() { animateRecommendationData(economics, matchNumber); });
+}
+
+function animateRecommendationData(economics, matchNumber) {
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var duration = reduced ? 0 : 900;
+  document.querySelectorAll('[data-progress]').forEach(function(bar) { bar.style.width = (bar.dataset.progress || 0) + '%'; });
+  var match = document.querySelector('.match-number[data-count]');
+  if (match && match.dataset.count !== '') animateNumber(match, Number(match.dataset.count), 1, '%', duration);
+  var yieldValue = document.querySelector('[data-yield]');
+  if (yieldValue && yieldValue.dataset.yield !== '') animateNumber(yieldValue, Number(yieldValue.dataset.yield), 2, ' t/acre', duration);
+  var profitValue = document.querySelector('[data-profit]');
+  if (profitValue && profitValue.dataset.profit !== '') animateNumber(profitValue, Number(profitValue.dataset.profit), 0, '', duration, true);
+}
+
+function animateNumber(element, target, decimals, suffix, duration, currency) {
+  if (!duration) { element.textContent = currency ? recFormatCurrency(target) : Number(target).toFixed(decimals) + suffix; return; }
+  var started = performance.now();
+  function frame(now) {
+    var progress = Math.min(1, (now - started) / duration);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    var value = target * eased;
+    element.textContent = currency ? recFormatCurrency(value) : value.toFixed(decimals) + suffix;
+    if (progress < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// Final sketch-style renderer: data is still supplied by the existing ML response.
+function buildResultMarkup(rec, economics, recommendations, parameters, selectedIndex) {
+  economics = economics || {};
+  recommendations = recommendations && recommendations.length ? recommendations : [rec];
+  parameters = parameters || {};
+  selectedIndex = Number.isInteger(selectedIndex) ? selectedIndex : 0;
+  var cropName = cropLabel(rec.crop);
+  var safeCrop = esc(cropName);
+  var matchValue = rec.probability == null ? null : Math.max(0, Math.min(100, Number(rec.probability)));
+  var matchText = matchValue == null ? 'Not available' : matchValue.toFixed(1) + '%';
+  var alternatives = recommendations.filter(function(item, index) { return index !== selectedIndex; });
+  var cropImage = cropImageUrl(rec.crop);
+  var details = [
+    ['Expected yield', economics.expected_yield_tons == null ? 'Not available' : formatNumber(economics.expected_yield_tons) + ' t/acre'],
+    ['Expected profit', economics.expected_profit == null ? 'Not available' : recFormatCurrency(economics.expected_profit)],
+    ['Acreage', economics.acreage == null ? 'Not available' : formatNumber(economics.acreage) + ' acres'],
+    ['Market price', economics.price_per_kg == null ? 'Not available' : recFormatCurrency(economics.price_per_kg) + ' / kg']
+  ];
+  var reasons = [
+    'For your field, this crop received a ' + matchText + ' match.',
+    'For the selected acreage, the expected yield is ' + (economics.expected_yield_tons == null ? 'Not available.' : formatNumber(economics.expected_yield_tons) + ' tonnes per acre.'),
+    'The expected return for this crop is ' + (economics.expected_profit == null ? 'Not available' : recFormatCurrency(economics.expected_profit)) + '.',
+    'Your soil readings were N ' + available(parameters.nitrogen) + ', P ' + available(parameters.phosphorus) + ', K ' + available(parameters.potassium) + ' mg/kg, with pH ' + available(parameters.ph) + '.'
+  ];
+  var reasonMarkup = reasons.map(function(reason, index) { return `<div class="agri-why-row" style="animation-delay:${index * 85}ms"><i class="fas fa-check-circle"></i><span>${esc(reason)}</span></div>`; }).join('');
+  var alternativesMarkup = alternatives.length ? alternatives.map(function(item) {
+    var index = recommendations.indexOf(item);
+    var probability = item.probability == null ? 'Not available' : Number(item.probability).toFixed(1) + '% Match';
+    return `<button type="button" class="agri-alternative" onclick="showRecommendation(${index})" aria-label="Select ${esc(cropLabel(item.crop))}"><span class="agri-alternative-name">${esc(cropLabel(item.crop))}</span><span class="flex items-center gap-2"><span class="agri-alternative-match">${probability}</span><i class="fas fa-chevron-right text-slate-400"></i></span></button>`;
+  }).join('') : '<div class="p-4 muted">No alternative crops were returned by the model.</div>';
+
+  document.getElementById('resultTitle').textContent = 'Agricultural Recommendation';
+  document.getElementById('resultSubtle').textContent = 'Select another returned crop below to view its details.';
+  document.getElementById('recommendationResult').innerHTML = `
+    <section class="agri-recommendation-panel" aria-live="polite">
+      <div class="agri-panel-heading">Agricultural Recommendation</div>
+      <div class="agri-main">
+        <div class="agri-main-image">${cropImage ? `<img src="${cropImage}" alt="${safeCrop} crop image" referrerpolicy="no-referrer" onerror="this.classList.add('is-unavailable');">` : '<div class="h-full grid place-items-center px-3 text-center text-sm text-slate-500">Image not available</div>'}</div>
+        <div class="agri-main-copy">
+          <div class="agri-crop-line"><h2 class="agri-crop-name">${safeCrop}</h2><span class="agri-match">${matchText} Match</span></div>
+          ${matchValue == null ? '' : `<div class="agri-match-bar" aria-label="${matchText} match"><span data-sketch-progress="${matchValue}"></span></div>`}
+          <div class="agri-details">${details.map(function(detail) { return `<span class="agri-detail"><strong>${esc(detail[0])}:</strong> ${esc(detail[1])}</span>`; }).join('')}</div>
+          <h3 class="agri-why-title">Why this crop?</h3>
+          <div class="agri-why">${reasonMarkup}</div>
+          <p class="muted mt-3">These explanations use the actual recommendation inputs and returned crop economics. Water need and risk are Not available because they are not included in the current backend response.</p>
+        </div>
+      </div>
+      <div class="agri-alternatives">${alternativesMarkup}</div>
+      <div class="action-grid p-4"><button type="button" class="outline-btn" onclick="openCompareCrops()">Compare Crops</button><button type="button" class="simulation-btn" onclick="startSimulation()">Run Simulation</button></div>
+    </section>`;
+  requestAnimationFrame(function() { var progress = document.querySelector('[data-sketch-progress]'); if (progress) progress.style.width = progress.dataset.sketchProgress + '%'; });
+}
 </script>
 {% endblock %}
-
-

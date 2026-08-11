@@ -35,6 +35,39 @@ def _num(payload, key, default=None):
         return default
 
 
+@bp.route('/loading')
+@login_required
+def farm_loading():
+    guard = _require_farmer()
+    if guard:
+        return guard
+    return render_template('digital_twin/farm_loading.html', crop=request.args.get('crop', ''))
+
+
+@bp.route('/farm-dashboard')
+@login_required
+def farm_dashboard():
+    guard = _require_farmer()
+    if guard:
+        return guard
+    return render_template('digital_twin/farm_dashboard.html', crop=request.args.get('crop', ''))
+
+
+@bp.route('/api/farm-question', methods=['POST'])
+@login_required
+def api_farm_question():
+    guard = _require_farmer()
+    if guard:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    payload = request.get_json(silent=True) or {}
+    crop = (payload.get('crop') or '').strip()
+    question = (payload.get('question') or '').strip()
+    baseline = payload.get('baseline') or {}
+    if not crop or not question:
+        return jsonify({'success': False, 'error': 'Crop and question are required.'}), 400
+    return jsonify({'success': True, 'scenario': scenario_engine.simulate_farmer_question(crop, question, baseline)})
+
+
 @bp.route('/select')
 @login_required
 def select_crop():

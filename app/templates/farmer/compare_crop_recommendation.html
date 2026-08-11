@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Crops - AgriConnect{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .compare-page { max-width:1380px; margin:0 auto; }
+  .compare-heading { color:#123d29; font-size:clamp(2rem,4vw,3rem); font-weight:800; letter-spacing:-.06em; }
+  .compare-back { border:1px solid #9acbad; border-radius:12px; padding:.7rem .95rem; color:#17643d; background:#fff; font-weight:800; transition:.2s; }
+  .compare-back:hover { transform:translateY(-1px); background:#f1faf1; }
+  .matrix-scroll { overflow-x:auto; padding-bottom:.25rem; }
+  .compare-matrix { min-width:900px; overflow:hidden; border:1px solid #dbe9df; border-radius:22px; background:#fff; box-shadow:0 16px 38px rgba(16,67,38,.1); }
+  .matrix-grid { display:grid; grid-template-columns:155px repeat(3,minmax(230px,1fr)); }
+  .matrix-cell { min-width:0; padding:1rem .85rem; border-right:1px solid #e7efe9; border-bottom:1px solid #e7efe9; text-align:center; }
+  .matrix-cell:nth-child(4n) { border-right:0; }
+  .matrix-grid > .matrix-cell:nth-last-child(-n+4) { border-bottom:0; }
+  .matrix-criteria { display:flex; align-items:center; justify-content:flex-start; color:#587063; background:#f7fbf7; font-size:.78rem; font-weight:800; text-align:left; }
+  .matrix-header { min-height:220px; padding:1rem .8rem; color:#fff; background:#167448; }
+  .matrix-header.is-top { background:#1e8050; box-shadow:inset 0 0 0 2px #9bd5a8; }
+  .matrix-header .matrix-crop-name { display:block; margin-top:.7rem; font-size:1.1rem; font-weight:800; }
+  .matrix-header .matrix-match { display:block; margin-top:.3rem; color:#d5f2da; font-size:.82rem; font-weight:800; }
+  .best-match-badge { display:inline-block; margin-top:.55rem; border-radius:999px; padding:.25rem .55rem; color:#185f39; background:#d9f0dc; font-size:.67rem; font-weight:800; }
+  .matrix-image-frame { position:relative; width:100%; height:108px; overflow:hidden; border-radius:13px; background:linear-gradient(135deg,#deefdf,#badcbc); }
+  .matrix-image-frame::before { content:'Loading image'; position:absolute; inset:0; display:grid; place-items:center; color:#527660; font-size:.73rem; font-weight:700; }
+  .matrix-image { position:relative; z-index:1; display:block; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .2s ease,transform .3s ease; }
+  .matrix-image.is-loaded { opacity:1; }
+  .matrix-image.is-failed { display:none; }
+  .matrix-image-frame:has(.matrix-image.is-failed)::before { content:'Image not available'; background:#edf6ed; }
+  .matrix-value { color:#183e2a; font-size:.92rem; font-weight:800; }
+  .matrix-best-cell { background:#f4fbf4; color:#17643d; }
+  .matrix-note { padding:.7rem 1.2rem; color:#718078; background:#fbfdfb; font-size:.8rem; }
+  .compare-empty { padding:3rem 1.5rem; text-align:center; color:#718078; }
+  @media(prefers-reduced-motion:reduce){ .compare-back:hover,.matrix-image:hover{transform:none;} .matrix-image{transition:none;} }
+  @media(min-width:901px){ .matrix-image-frame:hover .matrix-image.is-loaded{transform:scale(1.04); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="px-4 py-5 md:px-8 md:py-8">
+  <div class="compare-page">
+    <div class="mb-5 flex items-center justify-between gap-3">
+      <div><div class="eyebrow">Crop advisor</div><h1 class="compare-heading">Compare Crops</h1></div>
+      <a href="{{ url_for('farmer.crop_recommendation') }}" onclick="return backToRecommendations()" class="compare-back"><i class="fas fa-arrow-left mr-2"></i> Back</a>
+    </div>
+    <div id="compareContent" class="matrix-scroll"><div class="compare-matrix"><div class="compare-empty">Loading comparison...</div></div></div>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var imageUrls = {
+    groundnut: 'https://tse2.mm.bing.net/th/id/OIP.mK-qaXUTfjbf6vlc4pavdQHaE2?r=0&pid=Api&P=0&h=180',
+    rice: 'https://tse2.mm.bing.net/th/id/OIP.DxY9NN_L7r5MC2UG3c3DjwHaE8?r=0&pid=Api&P=0&h=180',
+    maize: 'https://gubbagroup.com/wp-content/uploads/2025/11/building-a-resilient-maize-economy-2025-10-22.jpg',
+    wheat: 'https://tse4.mm.bing.net/th/id/OIP.cBWhC6Z9LzDl-Bm4RWomRQHaFl?r=0&pid=Api&P=0&h=180',
+    cotton: 'https://tse1.mm.bing.net/th/id/OIP.R-oJhLGgvPdDfOtsLko0DAHaFj?r=0&pid=Api&P=0&h=180',
+    sugarcane: 'https://tse2.mm.bing.net/th/id/OIP.fz85EXtNkce6t7BlGWUbCgHaE8?r=0&pid=Api&P=0&h=180',
+    mango: 'https://www.greenlife.co.ke/wp-content/uploads/2022/04/Mangoes.jpg',
+    pomegranate: 'https://www.homefortheharvest.com/wp-content/uploads/2022/10/pomegranate-tree-with-fresh-fruits.jpg',
+    chickpea: 'https://tse3.mm.bing.net/th/id/OIP.NU2FRPlJigv01WYLEAJvWQHaE8?r=0&pid=Api&P=0&h=180',
+    kidneybeans: 'https://tse4.mm.bing.net/th/id/OIP.arQiTuz14VWaFf7t3fZtdgHaEK?r=0&pid=Api&P=0&h=180',
+    pigeonpeas: 'https://tse2.mm.bing.net/th/id/OIP.TyIQswxVKWtTj5Dx7vukdwHaGY?r=0&pid=Api&P=0&h=180',
+    mothbeans: 'https://tse1.mm.bing.net/th/id/OIP._EBmuM5Qiu1YkSEFw98vAwHaF-?r=0&pid=Api&P=0&h=180',
+    mungbean: 'https://tse4.mm.bing.net/th/id/OIP.5fbfCkkwKdZeB5KWnVmoVAHaE6?r=0&pid=Api&P=0&h=180',
+    blackgram: 'https://tse4.mm.bing.net/th/id/OIP.uVxxZ4HVSgpV3mrJDMwWngHaFs?r=0&pid=Api&P=0&h=180',
+    lentil: 'https://tse3.mm.bing.net/th/id/OIP.Pw0h3TY29mOLw6s113ZN0QHaHa?r=0&pid=Api&P=0&h=180',
+    banana: 'https://tse2.mm.bing.net/th/id/OIP.XrL6LY4odRY2mJwWIogcYwHaEK?r=0&pid=Api&P=0&h=180',
+    grapes: 'https://tse1.mm.bing.net/th/id/OIP._GTRDkh0bJzWlJWkoWBQEAHaEK?r=0&pid=Api&P=0&h=180',
+    watermelon: 'https://tse3.mm.bing.net/th/id/OIP.WNqp0hCzl3yJScm4-kdIOwHaE7?r=0&pid=Api&P=0&h=180',
+    muskmelon: 'https://images.slurrp.com/prodrecipe_images/cms/5nj8uslz7wf.webp',
+    apple: 'https://tse1.mm.bing.net/th/id/OIP.MkxwkVSNx0e9ByY42LXVFgHaFc?r=0&pid=Api&P=0&h=180',
+    orange: 'https://tse4.mm.bing.net/th/id/OIP.s_yqezA3w7VWKqZMiS20TwHaE7?r=0&pid=Api&P=0&h=180',
+    papaya: 'https://tse2.mm.bing.net/th/id/OIP.pKRjPitn2iMbBvBsHudilgHaFj?r=0&pid=Api&P=0&h=180',
+    coconut: 'https://tse1.mm.bing.net/th/id/OIP.Xb3hR6Klg-rYKmhkx1JjswHaEO?r=0&pid=Api&P=0&h=180',
+    jute: 'https://tse2.mm.bing.net/th/id/OIP.UF7EZrE7BOHWL08tYZhHbwHaE8?r=0&pid=Api&P=0&h=180',
+    coffee: 'https://tse4.mm.bing.net/th/id/OIP.l9y8s8xEEY8NvikR7BZf4QHaEK?r=0&pid=Api&P=0&h=180'
+  };
+  var content = document.getElementById('compareContent');
+  window.backToRecommendations = function () {
+    var referrer = document.referrer || '';
+    try {
+      var previous = new URL(referrer);
+      if (previous.origin === window.location.origin && previous.pathname === '/farmer/crop-recommendation') {
+        window.history.back();
+        return false;
+      }
+    } catch (error) {}
+    window.location.href = '/farmer/crop-recommendation';
+    return false;
+  };
+  var esc = value => String(value == null ? 'Not available' : value).replace(/[&<>"']/g, function (ch) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); });
+  var label = value => value ? String(value).replace(/\b\w/g, function (letter) { return letter.toUpperCase(); }) : 'Not available';
+  var number = value => value == null || value === '' ? 'Not available' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  var money = value => value == null || value === '' ? 'Not available' : 'Rs. ' + Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  var payload = null;
+  try { payload = JSON.parse(sessionStorage.getItem('aiThalirCropRecommendations') || 'null'); } catch (error) {}
+  if (!payload || !Array.isArray(payload.recommendations) || !payload.recommendations.length) { content.innerHTML = '<div class="compare-matrix"><div class="compare-empty">No recommendation results are available. Generate a recommendation first.</div></div>'; return; }
+  var recommendations = payload.recommendations.slice(0, 3);
+  var economics = payload.economicsByCrop || {};
+  var bestIndex = recommendations.reduce(function (best, rec, index) {
+    if (rec.probability == null) return best;
+    if (best === -1 || Number(rec.probability) > Number(recommendations[best].probability)) return index;
+    return best;
+  }, -1);
+  var cropHeader = recommendations.map(function (rec, index) {
+    var key = String(rec.crop || '').toLowerCase().trim(); var image = imageUrls[key]; var probability = rec.probability == null ? 'Not available' : Number(rec.probability).toFixed(1) + '%';
+    var imageAttrs = index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+    return `<div class="matrix-cell matrix-header ${index === bestIndex ? 'is-top' : ''}"><div class="matrix-image-frame">${image ? `<img class="matrix-image" src="${image}" alt="${esc(label(rec.crop))} crop image" decoding="async" ${imageAttrs} onload="this.classList.add('is-loaded')" onerror="this.classList.add('is-failed')">` : '<span class="sr-only">Image not available</span>'}</div><span class="matrix-crop-name">${esc(label(rec.crop))}</span><span class="matrix-match">${probability} Match</span>${index === bestIndex ? '<span class="best-match-badge">Best Match</span>' : ''}</div>`;
+  }).join('');
+  var row = function (name, valueFn) { return '<div class="matrix-cell matrix-criteria">' + name + '</div>' + recommendations.map(function (rec, index) { return '<div class="matrix-cell matrix-value ' + (index === bestIndex ? 'matrix-best-cell' : '') + '">' + valueFn(rec, economics[rec.crop] || {}) + '</div>'; }).join(''); };
+  var suitabilityRow = row('Suitability', function (rec) { return rec.probability == null ? 'Not available' : Number(rec.probability).toFixed(1) + '%'; });
+  var yieldRow = row('Expected Yield', function (rec, data) { return data.expected_yield_tons == null ? 'Not available' : number(data.expected_yield_tons) + ' t/acre'; });
+  var profitRow = row('Expected Profit', function (rec, data) { return money(data.expected_profit); });
+  var priceRow = row('Market Price', function (rec, data) { return data.price_per_kg == null ? 'Not available' : money(data.price_per_kg) + ' / kg'; });
+  content.innerHTML = `<div class="compare-matrix"><div class="matrix-grid"><div class="matrix-cell matrix-header"><span class="matrix-crop-name">Criteria</span></div>${cropHeader}${suitabilityRow}${yieldRow}${profitRow}${priceRow}</div></div>`;
+})();
+</script>
+{% endblock %}

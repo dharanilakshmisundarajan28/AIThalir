@@ -29,6 +29,7 @@ swapped in later without touching the rest of the dashboard.
 
 from app.digital_twin.crop_catalog import get_crop_catalog, normalise_crop
 from app.digital_twin import simulation_engine as engine
+import re
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +391,133 @@ def compare_to_baseline(crop, scenario_key, pct=None, overrides=None, acreage=1.
     scenario["explanation"] = _build_explanation(crop, scenario, baseline)
     scenario["ai_suggestion"] = _build_suggestion(crop, scenario, acreage)
     return scenario
+
+
+def simulate_farmer_question(crop, question, baseline):
+    """Turn a farmer's plain-language what-if question into one deterministic
+    dashboard scenario.  The original recommendation economics remain the
+    baseline; impacts are composed so combined conditions stay repeatable.
+    """
+    text = (question or "").lower()
+    crop_cfg = get_crop_catalog(normalise_crop(crop))
+
+    def percent(default):
+        match = re.search(r"(\d+(?:\.\d+)?)\s*%", text)
+        return float(match.group(1)) if match else float(default)
+
+    def percent_for(words, default):
+        for word in words:
+            after = re.search(word + r"[^.]{0,36}?(\d+(?:\.\d+)?)\s*%", text)
+            before = re.search(r"(\d+(?:\.\d+)?)\s*%[^.]{0,36}?" + word, text)
+            match = after or before
+            if match:
+                return float(match.group(1))
+        return percent(default)
+
+    def number_before(word, default):
+        match = re.search(r"(\d+(?:\.\d+)?)\s*(?:days?|degrees?|°c)?\s*(?:of\s+)?" + word, text)
+        return float(match.group(1)) if match else float(default)
+
+    impacts, changes = [], []
+    cost_factor = 1.0
+
+    if any(term in text for term in ("fertilizer", "fertiliser", "nutrient")):
+        amount = percent_for(("fertilizer", "fertiliser", "nutrient"), 20)
+        if any(term in text for term in ("reduce", "reduces", "reduced", "decrease", "decreases", "less", "lower", "cut", "cannot afford")):
+            impacts.append(-min(42.0, amount * 0.45))
+            cost_factor *= max(0.45, 1 - amount / 100.0)
+            changes.append(f"fertilizer reduced by {amount:g}%")
+        elif any(term in text for term in ("increase", "increases", "increased", "more", "add")):
+            impacts.append(min(12.0, amount * 0.20))
+            cost_factor *= 1 + amount / 100.0
+            changes.append(f"fertilizer increased by {amount:g}%")
+
+    if any(term in text for term in ("water", "irrigation")):
+        amount = percent_for(("water", "irrigation"), 20)
+        if any(term in text for term in ("reduce", "reduces", "reduced", "decrease", "decreases", "less", "low", "shortage", "insufficient")):
+            impacts.append(-min(48.0, amount * 0.55))
+            changes.append(f"water reduced by {amount:g}%")
+        elif any(term in text for term in ("increase", "more", "improve")):
+            impacts.append(min(10.0, amount * 0.15))
+            changes.append(f"water increased by {amount:g}%")
+
+    if "no rain" in text or "without rain" in text:
+        days = number_before("days", 10)
+        impacts.append(-min(50.0, days * 2.0))
+        changes.append(f"no rain for {days:g} days")
+    elif any(term in text for term in ("rainfall", "rain")):
+        amount = percent_for(("rainfall", "rain"), 20)
+        if any(term in text for term in ("reduce", "reduces", "reduced", "decrease", "decreases", "less", "low")):
+            impacts.append(-min(42.0, amount * 0.38))
+            changes.append(f"rainfall reduced by {amount:g}%")
+        elif any(term in text for term in ("heavy", "excess", "flood", "increase", "more")):
+            impacts.append(-min(35.0, max(12.0, amount * 0.25)))
+            changes.append("excess rainfall")
+
+    if any(term in text for term in ("temperature", "heat", "hotter", "warmer", "cold", "cooler")):
+        degrees = number_before("degrees", 3)
+        direction = -1 if any(term in text for term in ("decrease", "lower", "cooler", "cold")) else 1
+        lo, hi = crop_cfg["temp_ideal_range"]
+        sensitivity = 2.4 if direction > 0 else 2.0
+        impacts.append(-min(30.0, abs(degrees) * sensitivity))
+        changes.append(f"temperature {'increased' if direction > 0 else 'decreased'} by {degrees:g}°C")
+
+    if any(term in text for term in ("delay planting", "planting delay", "delay sowing", "late planting")):
+        days = number_before("days", 15)
+        impacts.append(-min(35.0, days * 0.65))
+        changes.append(f"planting delayed by {days:g} days")
+
+    if any(term in text for term in ("pest", "disease", "insect")):
+        amount = percent_for(("pest", "disease", "insect"), 30)
+        impacts.append(-min(45.0, amount * 0.42))
+        changes.append(f"pest or disease pressure increased by {amount:g}%")
+
+    if not impacts:
+        changes.append("no measurable farm condition was found")
+
+    impact = max(-75.0, min(15.0, sum(impacts)))
+    growth = round(max(5.0, min(100.0, 100.0 + impact)), 1)
+    yield_factor = growth / 100.0
+    base_yield = baseline.get("expected_yield_tons")
+    base_income = baseline.get("expected_income")
+    base_cost = baseline.get("expected_cost")
+    base_profit = baseline.get("expected_profit")
+    expected_yield = round(float(base_yield) * yield_factor, 2) if base_yield is not None else None
+    if base_income is not None and base_cost is not None:
+        expected_profit = round(float(base_income) * yield_factor - float(base_cost) * cost_factor, 0)
+    else:
+        expected_profit = round(float(base_profit) * yield_factor, 0) if base_profit is not None else None
+
+    return {
+        "recognized": bool(impacts),
+        "changes": changes,
+        "growth": growth,
+        "impact_pct": round(impact, 1),
+        "expected_yield_tons": expected_yield,
+        "expected_profit": expected_profit,
+        "yield_change": round(expected_yield - float(base_yield), 2) if expected_yield is not None and base_yield is not None else None,
+        "profit_change": round(expected_profit - float(base_profit), 0) if expected_profit is not None and base_profit is not None else None,
+        "visual_health": growth,
+        "message": _farmer_message(changes, impact),
+        "tip": _farmer_tip(changes, impact),
+    }
+
+
+def _farmer_message(changes, impact):
+    if not impact:
+        return "I could not find a measurable condition to simulate. Try mentioning water, fertilizer, rain, temperature, planting delay, or pests."
+    direction = "improve" if impact > 0 else "reduce"
+    return f"With {', '.join(changes)}, crop growth may {direction}. The expected yield and profit are updated below for this scenario."
+
+
+def _farmer_tip(changes, impact):
+    if impact < -20:
+        return "This condition could put the crop under stress. If possible, correct the biggest water, nutrient, or pest issue early."
+    if impact < 0:
+        return "Watch the crop closely and keep water and nutrients balanced to protect yield."
+    if impact > 0:
+        return "This change may help, but avoid excess inputs so the crop stays balanced."
+    return "Current conditions are the reference plan for this crop."
 
 
 # ---------------------------------------------------------------------------

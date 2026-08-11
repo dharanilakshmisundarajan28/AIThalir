@@ -782,6 +782,13 @@ def simulation():
     return render_template('farmer/simulation.html', crop=crop)
 
 
+@bp.route('/crop-recommendation/comparecrop')
+@login_required
+def compare_crop_recommendations():
+    """Compare the three recommendations returned by the Crop Advisor."""
+    return render_template('farmer/compare_crop_recommendation.html')
+
+
 @bp.route('/simulation-config')
 @login_required
 def simulation_config():
