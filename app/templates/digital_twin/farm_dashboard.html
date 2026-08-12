@@ -40,4 +40,66 @@ document.getElementById('chatForm').addEventListener('submit',async e=>{e.preven
 function applyScenario(){if(!currentScenario)return;applyVisualState(currentScenario.visual_health,currentScenario.changes);document.getElementById('scenarioLabel').textContent=currentScenario.changes.join(', ');toastTwin('Scenario applied to your Digital Twin.')}
 try{twinData=JSON.parse(sessionStorage.getItem('aiThalirDigitalTwin')||'{}')}catch(e){}if(!twinData.crop)twinData.crop='{{ crop }}'||'Crop';render();try{if(window.THREE)farmScene();else throw Error('Three.js unavailable')}catch(err){document.getElementById('farmLoading').innerHTML='<span><i class="fas fa-circle-info"></i> 3D farm is unavailable in this browser.</span>';}
 </script>
+<script>
+document.addEventListener('click', function(event){
+  const button=event.target.closest('.plan-btn'); if(!button) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+
+  // Show farm name modal
+  const modal=document.createElement('div');
+  modal.id='farmNameModal';
+  modal.style.cssText='position:fixed;z-index:9999;inset:0;display:grid;place-items:center;background:#12392088;backdrop-filter:blur(10px)';
+  modal.innerHTML=`
+    <div style="min-width:320px;max-width:420px;width:90%;padding:36px;border-radius:24px;background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.18)">
+      <h2 style="margin:0 0 6px;font-weight:900;color:#092f20;font-size:1.3rem">Create Your Farm</h2>
+      <p style="margin:0 0 20px;color:#496457;font-size:.93rem">Enter a name for your farm</p>
+      <input id="farmNameInput" type="text" placeholder="Farm 1" maxlength="100"
+        style="width:100%;box-sizing:border-box;border:1.5px solid #d0e8d8;border-radius:10px;padding:.75rem 1rem;font-size:1rem;outline:none;margin-bottom:6px">
+      <p id="farmNameError" style="color:#c0392b;font-size:.82rem;min-height:18px;margin:0 0 16px"></p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button id="farmNameCancel" style="border:1px solid #d0e8d8;border-radius:10px;background:#fff;color:#496457;font-weight:700;padding:.65rem 1.2rem;cursor:pointer">Cancel</button>
+        <button id="farmNameContinue" style="border:0;border-radius:10px;background:#08733d;color:#fff;font-weight:800;padding:.65rem 1.4rem;cursor:pointer">Continue</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const input=document.getElementById('farmNameInput');
+  const errEl=document.getElementById('farmNameError');
+  const continueBtn=document.getElementById('farmNameContinue');
+  input.focus();
+
+  document.getElementById('farmNameCancel').onclick=()=>modal.remove();
+
+  async function submitFarm(){
+    const name=input.value.trim();
+    if(!name){errEl.textContent='Farm name cannot be empty.';return;}
+    continueBtn.disabled=true;
+    continueBtn.textContent='Saving...';
+    errEl.textContent='';
+    const crop=twinData.crop||'{{ crop }}'||'Crop';
+    try{
+      const r=await fetch('/digital-twin/api/create-farm',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({farm_name:name,crop:crop,plan_data:twinData})});
+      const data=await r.json();
+      if(!data.success)throw new Error(data.error||'Failed to save farm');
+      const farmId=data.farm_id;
+      modal.remove();
+      // Show loading overlay (existing animation)
+      const overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;z-index:9999;inset:0;display:grid;place-items:center;background:#12392088;backdrop-filter:blur(10px)';
+      overlay.innerHTML='<div style="min-width:290px;padding:42px;border-radius:24px;background:#fff;text-align:center"><i id="planStatus" class="fas fa-spinner fa-spin" style="font-size:52px;color:#16803b"></i><h2 id="planMessage" style="margin-top:16px;font-weight:900">Processing your farm plan...</h2></div>';
+      document.body.appendChild(overlay);
+      setTimeout(()=>{document.getElementById('planStatus').className='fas fa-check-circle';document.getElementById('planMessage').textContent='Farm plan applied successfully';},2000);
+      setTimeout(()=>location.href='/digital-twin/visualization/'+farmId,2750);
+    }catch(err){
+      errEl.textContent=err.message||'Could not save farm. Please try again.';
+      continueBtn.disabled=false;
+      continueBtn.textContent='Continue';
+    }
+  }
+
+  continueBtn.onclick=submitFarm;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')submitFarm();});
+},true);
+</script>
 {% endblock %}

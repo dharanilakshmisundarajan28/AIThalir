@@ -2,11 +2,12 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import CropRecommendation, DigitalTwinSession
+from app.models import CropRecommendation, DigitalTwinSession, Farm, Product
 from app.digital_twin.crop_config import get_crop_config, list_available_crops
 from app.digital_twin import simulation_engine as engine
 from app.digital_twin import scenario_engine
 from app.digital_twin.explainability import analyse_crop, FEATURES
+from app.digital_twin.fertilizer_catalog import ensure_fertilizer_catalog
 
 bp = Blueprint('digital_twin', __name__, url_prefix='/digital-twin')
 
@@ -51,6 +52,122 @@ def farm_dashboard():
     if guard:
         return guard
     return render_template('digital_twin/farm_dashboard.html', crop=request.args.get('crop', ''))
+
+
+@bp.route('/visualization')
+@login_required
+def visualization():
+    guard = _require_farmer()
+    if guard:
+        return guard
+    farms = Farm.query.filter_by(farmer_id=current_user.id).order_by(Farm.created_at.desc()).all()
+    return render_template('digital_twin/farms.html', farms=farms)
+
+
+@bp.route('/visualization/<int:farm_id>')
+@login_required
+def visualization_farm(farm_id):
+    guard = _require_farmer()
+    if guard:
+        return guard
+    farm = Farm.query.get_or_404(farm_id)
+    if farm.farmer_id != current_user.id:
+        return redirect(url_for('digital_twin.visualization'))
+    return render_template('digital_twin/farm_visualization.html', farm=farm, session_id=None)
+
+
+@bp.route('/api/create-farm', methods=['POST'])
+@login_required
+def create_farm():
+    guard = _require_farmer()
+    if guard:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    payload = request.get_json(silent=True) or {}
+    farm_name = (payload.get('farm_name') or '').strip()
+    crop = (payload.get('crop') or '').strip()
+    plan_data = payload.get('plan_data') or {}
+    if not farm_name:
+        return jsonify({'success': False, 'error': 'Farm name is required'}), 400
+    if not crop:
+        return jsonify({'success': False, 'error': 'Crop is required'}), 400
+    farm = Farm(farmer_id=current_user.id, farm_name=farm_name, crop=crop, plan_data=plan_data)
+    db.session.add(farm)
+    db.session.commit()
+    return jsonify({'success': True, 'farm_id': farm.id})
+
+
+@bp.route('/api/farms')
+@login_required
+def api_farms():
+    guard = _require_farmer()
+    if guard:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    farms = Farm.query.filter_by(farmer_id=current_user.id).order_by(Farm.created_at.desc()).all()
+    return jsonify({'success': True, 'farms': [
+        {'id': f.id, 'farm_name': f.farm_name, 'crop': f.crop,
+         'created_at': f.created_at.isoformat() if f.created_at else None}
+        for f in farms
+    ]})
+
+
+def _visualization_twin(session_id, crop=None):
+    twin = _session_or_404(session_id) if session_id else None
+    if twin:
+        return twin
+    if not crop:
+        return DigitalTwinSession.query.filter_by(farmer_id=current_user.id).order_by(DigitalTwinSession.updated_at.desc()).first()
+    rec = CropRecommendation.query.filter_by(farmer_id=current_user.id).order_by(CropRecommendation.created_at.desc()).first()
+    inputs = {'nitrogen': rec.nitrogen, 'phosphorus': rec.phosphorus, 'potassium': rec.potassium,
+              'temperature': rec.temperature, 'humidity': rec.humidity, 'rainfall': rec.rainfall, 'ph': rec.ph} if rec else {}
+    state = engine.new_state(crop, inputs)
+    twin = DigitalTwinSession(farmer_id=current_user.id, crop_recommendation_id=rec.id if rec else None,
+                              crop_name=state['crop'], state_json=state, status=state['status'])
+    db.session.add(twin); db.session.commit()
+    return twin
+
+
+def _fertilizer_for_state(state, cfg):
+    choices = [('nitrogen', 'n', 'Urea 46-0-0'), ('phosphorus', 'p', 'DAP 18-46-0'), ('potassium', 'k', 'MOP 0-0-60')]
+    nutrient, ideal_key, product = max(choices, key=lambda item: cfg['ideal_npk'][item[1]] - state[item[0]])
+    # At flowering and fruit formation, potassium/phosphorus balance is more
+    # useful than a generic nitrogen recommendation when neither is deficient.
+    if state['growthStage'] in ('Flowering', 'Fruit Formation'):
+        product = 'NPK 10-26-26'
+    gap = max(0, cfg['ideal_npk'][ideal_key] - state[nutrient])
+    return {'product': product, 'nutrient': nutrient, 'quantity_kg_per_acre': round(max(5, gap * .5), 1),
+            'reason': f"{nutrient.title()} is evaluated against the {cfg['ideal_npk'][ideal_key]:.0f} target for {cfg['display_name']}.",
+            'timing': f"Apply during the current {state['growthStage']} stage, following local agronomy guidance."}
+
+
+@bp.route('/api/visualization')
+@login_required
+def api_visualization():
+    guard = _require_farmer()
+    if guard:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    # Support farm_id-based lookup
+    farm_id = request.args.get('farm_id', type=int)
+    if farm_id:
+        farm = Farm.query.get(farm_id)
+        if not farm or farm.farmer_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Farm not found'}), 404
+        crop = farm.crop
+        twin = _visualization_twin(None, crop)
+    else:
+        twin = _visualization_twin(request.args.get('session_id', type=int), request.args.get('crop'))
+    if not twin:
+        return jsonify({'success': False, 'error': 'Run a crop simulation before opening visualization.'}), 404
+    ensure_fertilizer_catalog()
+    state, cfg = twin.state_json, get_crop_config(twin.crop_name)
+    fertilizer = _fertilizer_for_state(state, cfg)
+    products = Product.query.filter_by(name=fertilizer['product'], is_fertilizer=True, is_available=True).all()
+    tasks = list(state.get('alerts', [])) or [f"Monitor {state['growthStage'].lower()} and check for {cfg['pests'][0]}."]
+    economics = scenario_engine._economics_for(twin.crop_name)
+    expected_profit = state['expectedYieldKg'] * economics['price_per_kg'] - economics['cost_per_acre'] * state['acreage']
+    return jsonify({'success': True, 'dashboard': {'session_id': twin.id, 'crop': cfg['display_name'], 'state': state,
+        'duration_days': cfg['duration_days'], 'expected_profit': round(expected_profit), 'fertilizer': fertilizer,
+        'suppliers': [{'name': p.name, 'type': p.fertilizer_type, 'price': p.price, 'supplier': p.seller.company_name or p.seller.username} for p in products],
+        'tasks': tasks}})
 
 
 @bp.route('/api/farm-question', methods=['POST'])

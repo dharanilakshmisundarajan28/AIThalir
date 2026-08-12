@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %}Farm Visualization - AgriConnect{% endblock %}
+{% block extra_head %}
+<!-- Tailwind CSS (Stitch design system) -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-secondary-container": "#00731e",
+        "surface-container-lowest": "#ffffff",
+        "on-error": "#ffffff",
+        "error": "#ba1a1a",
+        "surface-variant": "#e1e3e4",
+        "primary-fixed-dim": "#91d78a",
+        "surface-container": "#edeeef",
+        "surface": "#f8f9fa",
+        "outline-variant": "#c0c9bb",
+        "on-tertiary-fixed-variant": "#930013",
+        "on-secondary-fixed-variant": "#005313",
+        "tertiary-fixed": "#ffdad7",
+        "primary-fixed": "#acf4a4",
+        "secondary": "#006e1c",
+        "on-primary": "#ffffff",
+        "on-tertiary-fixed": "#410004",
+        "on-primary-container": "#90d689",
+        "on-primary-fixed-variant": "#0c5216",
+        "error-container": "#ffdad6",
+        "on-primary-fixed": "#002203",
+        "surface-tint": "#2a6b2c",
+        "on-surface": "#191c1d",
+        "on-error-container": "#93000a",
+        "inverse-on-surface": "#f0f1f2",
+        "outline": "#717a6d",
+        "on-surface-variant": "#41493e",
+        "inverse-surface": "#2e3132",
+        "secondary-fixed-dim": "#78dc77",
+        "on-background": "#191c1d",
+        "on-tertiary": "#ffffff",
+        "tertiary-fixed-dim": "#ffb3ad",
+        "surface-container-high": "#e7e8e9",
+        "tertiary": "#7c000f",
+        "surface-container-highest": "#e1e3e4",
+        "on-secondary": "#ffffff",
+        "tertiary-container": "#a70519",
+        "surface-dim": "#d9dadb",
+        "secondary-fixed": "#94f990",
+        "primary": "#00450d",
+        "surface-container-low": "#f3f4f5",
+        "on-tertiary-container": "#ffb2ac",
+        "inverse-primary": "#91d78a",
+        "surface-bright": "#f8f9fa",
+        "on-secondary-fixed": "#002204",
+        "background": "#f8f9fa",
+        "primary-container": "#1b5e20",
+        "secondary-container": "#91f78e"
+      },
+      borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+      spacing: { xs: "4px", "container-margin": "24px", gutter: "16px", sm: "8px", lg: "24px", md: "16px", unit: "4px", xl: "32px" },
+      fontFamily: {
+        "headline-md": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "label-lg": ["Inter"],
+        "body-lg": ["Inter"], "body-md": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"],
+        "data-display": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"],
+        "label-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"]
+      },
+      fontSize: {
+        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+        "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+        "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        "headline-lg-mobile": ["22px", { lineHeight: "28px", fontWeight: "700" }],
+        "data-display": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+        "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+        "headline-sm": ["16px", { lineHeight: "24px", fontWeight: "600" }]
+      }
+    }
+  }
+}
+</script>
+<style>
+  .viz-shell{max-width:1440px;margin:0 auto}
+  .shadow-ambient-card{box-shadow:0px 4px 20px rgba(0,0,0,.04)}
+  .farm-view{position:relative;width:100%;height:400px;overflow:hidden;
+    background:
+      radial-gradient(ellipse 60% 40% at 18% 8%,#fff7dd 0%,rgba(255,247,221,0) 60%),
+      linear-gradient(180deg,#a9d8ec 0%,#c9e6d6 30%,#dceccb 46%,#84a55a 47%,#5c7f3c 62%,#3b5a28 78%,#6b4a2f 79%,#4a3220 100%);}
+  .farm-view:before{content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 42% 22% at 22% 34%,#c9dfae 0%,rgba(201,223,174,0) 70%),
+      radial-gradient(ellipse 34% 18% at 78% 37%,#b9d79c 0%,rgba(185,215,156,0) 70%),
+      linear-gradient(155deg,transparent 0 40%,rgba(70,100,45,.35) 41% 48%,transparent 49%);
+    opacity:.9}
+  .field-crop{position:absolute;z-index:1;bottom:36px;left:6%;right:7%;height:46%;
+    background:repeating-linear-gradient(88deg,transparent 0 30px,#183f1f 31px 37px,transparent 38px 58px),
+               repeating-linear-gradient(88deg,transparent 0 30px,#2f6b34 31px 34px,transparent 35px 58px);
+    mask-image:linear-gradient(transparent,#000 22%,#000 92%,transparent);opacity:.92}
+  .farm-view-fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 60%,rgba(10,30,15,.28) 100%);z-index:1}
+</style>
+{% endblock %}
+{% block content %}
+<div class="viz-shell p-md">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-md">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface m-0" id="farmTitle">My Virtual Farm</h2>
+      <p class="text-xs text-on-surface-variant mt-1" id="farmSubtitle"></p>
+    </div>
+    <a href="{{ url_for('digital_twin.visualization') }}" class="flex items-center gap-xs text-primary-container font-label-lg text-label-lg hover:underline">
+      <i class="fas fa-arrow-left text-[13px]"></i> All Farms
+    </a>
+  </header>
+
+  <!-- Top summary strip -->
+  <div id="summary" class="bg-surface-container-lowest rounded-xl shadow-ambient-card p-md border border-surface-variant/30 flex flex-wrap lg:flex-nowrap gap-md mb-md items-center justify-between"></div>
+
+  <!-- Bento Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-md">
+
+    <!-- Main: Virtual Farm View + Overview -->
+    <section class="lg:col-span-8 flex flex-col gap-md">
+      <div class="bg-surface-container-lowest rounded-xl shadow-ambient-card overflow-hidden flex flex-col border border-surface-variant/30">
+        <div class="p-md border-b border-surface-variant flex justify-between items-center">
+          <h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-xs">
+            Virtual Farm View
+            <i class="fas fa-circle-info text-[13px] text-on-surface-variant"></i>
+          </h3>
+          <div class="flex items-center gap-md">
+            <div class="bg-surface-container-lowest border border-surface-variant rounded-md flex overflow-hidden">
+              <button class="px-3 py-1 text-xs font-semibold bg-surface-container text-on-surface">Day</button>
+              <button class="px-3 py-1 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors">Week</button>
+            </div>
+            <div class="flex gap-sm">
+              <button class="w-8 h-8 rounded-full border border-surface-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container">
+                <i class="fas fa-rotate-right text-[13px]"></i>
+              </button>
+              <button class="w-8 h-8 rounded-full border border-surface-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container">
+                <i class="fas fa-expand text-[13px]"></i>
+              </button>
+              <button class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center text-xs font-bold">3D</button>
+            </div>
+          </div>
+        </div>
+        <div class="farm-view">
+          <div class="farm-view-fade"></div>
+          <div class="field-crop"></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs px-xs border-l-4 border-primary-container pl-2 ml-xs">Farm Overview</h3>
+        <div id="overview" class="grid grid-cols-2 md:grid-cols-4 gap-md"></div>
+      </div>
+    </section>
+
+    <!-- Sidebar -->
+    <section class="lg:col-span-4 flex flex-col gap-md">
+
+      <div class="bg-surface-container-lowest rounded-xl shadow-ambient-card flex flex-col border border-surface-variant/30">
+        <div class="p-md flex justify-between items-center">
+          <h3 class="font-headline-sm text-headline-sm text-on-surface m-0">Tasks &amp; Alerts</h3>
+          <button class="text-primary-container font-label-md text-label-md hover:underline font-semibold">View All</button>
+        </div>
+        <div id="tasks" class="px-md pb-md flex flex-col gap-sm"></div>
+      </div>
+
+      <div class="bg-surface-container-lowest rounded-xl shadow-ambient-card p-md border border-surface-variant/30">
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-0.5">Recommended Fertilizer</h3>
+        <p class="text-xs text-on-surface-variant mb-3">Based on Soil &amp; Crop Stage</p>
+        <div id="fertilizer"></div>
+      </div>
+
+      <div class="bg-surface-container-lowest rounded-xl shadow-ambient-card p-md border border-surface-variant/30 flex flex-col gap-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-headline-sm text-headline-sm text-on-surface">Top Suppliers</h3>
+          <button class="text-primary-container font-label-md text-label-md hover:underline font-semibold">View All</button>
+        </div>
+        <div id="suppliers" class="flex flex-col gap-md"></div>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="mt-md rounded-xl bg-surface-container-lowest border border-surface-variant/50 px-lg py-md flex flex-wrap items-center justify-between gap-md shadow-ambient-card">
+    <div class="relative flex-1 min-w-[240px] max-w-2xl flex items-center">
+      <i class="far fa-comment-dots absolute left-3 text-on-surface-variant"></i>
+      <input type="text" placeholder="Chat with your farm advisor…" class="w-full pl-10 pr-10 py-2 bg-surface-container-low border border-surface-variant/30 rounded-lg text-body-md focus:outline-none focus:border-primary-container">
+      <button class="absolute right-3 text-primary-container hover:text-primary-container/80">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+    <div class="flex items-center gap-md">
+      <button title="Farm calendar" class="w-10 h-10 rounded-lg border border-primary-container/20 flex items-center justify-center text-primary-container hover:bg-primary-container/5">
+        <i class="far fa-calendar"></i>
+      </button>
+      <button title="Farm record" class="w-10 h-10 rounded-lg border border-primary-container/20 flex items-center justify-center text-primary-container hover:bg-primary-container/5">
+        <i class="far fa-file-lines"></i>
+      </button>
+      <button title="Farm wallet" class="w-10 h-10 rounded-lg border border-primary-container/20 flex items-center justify-center text-primary-container hover:bg-primary-container/5">
+        <i class="fas fa-wallet"></i>
+      </button>
+    </div>
+    <a class="bg-primary-container text-on-primary px-lg py-md rounded-lg font-label-lg flex items-center gap-sm hover:bg-primary-container/90 transition-colors shadow-sm" href="{{ url_for('farmer.crop_recommendation') }}">
+      <i class="fas fa-plus"></i> Add New Farm
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const sid = {{ session_id|tojson }};
+const el = s => document.querySelector(s);
+const money = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+
+// Extract farm_id from URL path /digital-twin/visualization/<farm_id>
+const pathParts = location.pathname.split('/');
+const farmId = parseInt(pathParts[pathParts.length - 1]) || null;
+
+// Populate farm name/crop from server-rendered data if available
+{% if farm is defined and farm %}
+document.getElementById('farmTitle').textContent = {{ farm.farm_name|tojson }};
+document.getElementById('farmSubtitle').textContent = {{ farm.crop|tojson }};
+{% endif %}
+
+function renderSummary(d, s) {
+  const health = s.cropHealth >= 70 ? 'Good' : s.cropHealth >= 45 ? 'Moderate' : 'Stressed';
+  el('#summary').innerHTML = `
+    <div class="flex items-center gap-sm pr-md border-r border-surface-variant/50 flex-[1.5]">
+      <span class="text-4xl leading-none">🌱</span>
+      <div>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mb-0.5">Current Crop</p>
+        <p class="font-headline-sm text-headline-sm text-on-surface">${d.crop}</p>
+        <div class="flex gap-md mt-1">
+          <div><p class="text-[10px] text-on-surface-variant">Farm Area</p><p class="text-[11px] font-semibold text-on-surface">${s.acreage} Acre</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="pr-md border-r border-surface-variant/50 flex-1">
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-0.5">Current Stage</p>
+      <p class="font-headline-sm text-headline-sm text-primary-container">${s.growthStage}</p>
+      <p class="text-[10px] text-on-surface-variant mt-1">Days Elapsed</p>
+      <p class="text-[11px] font-semibold text-on-surface">${s.simulationDay} / ${d.duration_days} days</p>
+    </div>
+    <div class="pr-md border-r border-surface-variant/50 flex-1">
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Farm Health</p>
+      <div class="bg-primary-fixed-dim/20 px-sm py-1 rounded-md flex items-center justify-between gap-xs mb-1 w-full max-w-[150px]">
+        <div class="flex items-center gap-xs">
+          <i class="fas fa-circle-check text-primary-container text-[15px]"></i>
+          <span class="font-label-md text-label-md text-primary-container">${health}</span>
+        </div>
+      </div>
+      <p class="text-[10px] text-on-surface-variant">All conditions are ${health === 'Good' ? 'optimal' : 'being monitored'}</p>
+    </div>
+    <div class="pr-md border-r border-surface-variant/50 flex-1 text-center">
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Expected Yield</p>
+      <p class="font-headline-md text-headline-md text-primary-container">${(s.expectedYieldKg / s.acreage / 1000).toFixed(2)} t/acre</p>
+    </div>
+    <div class="flex-1 text-center">
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Expected Profit</p>
+      <p class="font-headline-md text-headline-md text-primary-container js-profit">—</p>
+    </div>`;
+}
+
+function metric(icon, colorClass, label, value, note) {
+  return `<div class="bg-surface-container-lowest rounded-xl p-md shadow-ambient-card border border-surface-variant/30 flex flex-col items-center justify-center text-center">
+    <div class="flex flex-col items-center gap-xs mb-1">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center ${colorClass}"><i class="${icon} text-[20px]"></i></div>
+      <p class="font-body-sm text-body-sm text-on-surface-variant">${label}</p>
+    </div>
+    <p class="font-data-display text-data-display text-on-surface mb-1">${value}</p>
+    <p class="text-xs text-primary-container font-medium mb-1">${note}</p>
+  </div>`;
+}
+
+const crop = new URLSearchParams(location.search).get('crop');
+const qs = new URLSearchParams({
+  ...(farmId ? { farm_id: farmId } : {}),
+  ...(sid ? { session_id: sid } : {}),
+  ...(crop ? { crop } : {})
+});
+
+fetch('/digital-twin/api/visualization?' + qs).then(r => r.json()).then(x => {
+  if (!x.success) throw new Error(x.error);
+  const d = x.dashboard, s = d.state;
+
+  renderSummary(d, s);
+  // Update header with farm name from API response
+  if (d.farm_name) {
+    document.getElementById('farmTitle').textContent = d.farm_name;
+    document.getElementById('farmSubtitle').textContent = d.crop;
+  }
+  const profitEl = document.querySelector('.js-profit');
+  if (profitEl) profitEl.textContent = money(x.dashboard.expected_profit);
+
+  el('#overview').innerHTML = [
+    metric('fas fa-droplet', 'text-primary-container', 'Soil Moisture', s.soilMoisture.toFixed(0) + '%', 'Optimal range'),
+    metric('fas fa-temperature-half', 'text-error', 'Temperature', s.temperature.toFixed(1) + '°C', s.weather),
+    metric('fas fa-cloud-rain', 'text-blue-500', 'Rainfall This Week', s.rainfall.toFixed(0) + ' mm', 'Simulation input'),
+    metric('fas fa-droplet', 'text-blue-400', 'Humidity', s.humidity.toFixed(0) + '%', 'Current condition')
+  ].join('');
+
+  el('#tasks').innerHTML = d.tasks.slice(0, 3).map((t, i) => {
+    if (i === 0) {
+      return `<div class="p-sm bg-error-container/10 border border-error-container/30 rounded-lg flex gap-sm items-start">
+        <div class="w-10 h-10 rounded-lg bg-[#d7a16b] flex items-center justify-center text-white shrink-0"><i class="fas fa-seedling text-[18px]"></i></div>
+        <div class="w-full">
+          <h4 class="font-label-md text-label-md font-bold text-on-surface m-0">Fertilizer Application Due</h4>
+          <p class="font-body-sm text-body-sm text-on-surface-variant m-0 mb-3 leading-tight">${t}</p>
+          <div class="flex justify-end"><button class="bg-[#e53935] text-white px-3 py-1.5 rounded-md font-label-md text-label-md hover:bg-red-700 transition-colors shadow-sm">Take Action</button></div>
+        </div>
+      </div>`;
+    }
+    const icon = i === 1 ? 'fa-droplet' : 'fa-bug';
+    const title = i === 1 ? 'Irrigation recommended' : 'Monitor farm activity';
+    return `<div class="p-sm border border-surface-variant/50 rounded-lg flex gap-sm items-center hover:bg-surface-container-low transition-all cursor-pointer">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-primary-container shrink-0"><i class="fas ${icon} text-[16px]"></i></div>
+      <div class="flex-1"><h4 class="font-label-md text-label-md text-on-surface m-0">${title}</h4><p class="font-body-sm text-body-sm text-on-surface-variant m-0">${t}</p></div>
+      <i class="fas fa-chevron-right text-on-surface-variant text-[13px]"></i>
+    </div>`;
+  }).join('');
+
+  el('#fertilizer').innerHTML = `<div class="flex justify-between items-center">
+    <div>
+      <div class="flex flex-col gap-1 mb-3">
+        <div class="flex items-center gap-xs"><i class="fas fa-circle-check text-[13px] text-primary-container"></i><span class="font-label-md text-label-md font-bold text-on-surface">${d.fertilizer.product}</span></div>
+        <div class="flex items-center gap-xs"><i class="fas fa-circle-check text-[13px] text-primary-container"></i><span class="font-label-md text-label-md text-on-surface-variant">${d.fertilizer.nutrient} nutrient focus</span></div>
+      </div>
+      <p class="text-[10px] text-on-surface-variant">${d.fertilizer.reason}</p>
+      <p class="text-[10px] text-on-surface-variant mb-2">${d.fertilizer.timing}</p>
+      <p class="text-[10px] text-on-surface-variant">Recommended Dose</p>
+      <p class="font-label-md text-label-md font-bold">${d.fertilizer.quantity_kg_per_acre} kg / acre</p>
+    </div>
+    <div class="w-24 h-32 bg-primary-container/10 flex items-center justify-center rounded-md border border-primary-container/20 shrink-0 ml-md">
+      <div class="w-16 h-24 bg-primary-container rounded flex flex-col items-center pt-2 relative overflow-hidden">
+        <span class="text-white text-[10px] font-bold">NPK</span>
+        <div class="absolute bottom-0 w-full h-10 bg-white/20 flex justify-center items-center"><i class="fas fa-leaf text-white text-[15px]"></i></div>
+      </div>
+    </div>
+  </div>`;
+
+  el('#suppliers').innerHTML = d.suppliers.length ? d.suppliers.map(p => `
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-sm">
+        <div class="w-8 h-8 rounded-full border border-surface-variant flex items-center justify-center shrink-0 bg-surface"><i class="fas fa-leaf text-[14px] text-primary-container"></i></div>
+        <div><p class="font-label-md text-label-md font-bold text-on-surface m-0">${p.supplier}</p><p class="text-[10px] text-on-surface-variant">${p.name} · ${p.type}</p></div>
+      </div>
+      <div class="flex items-center gap-sm">
+        <p class="font-label-md text-label-md font-bold text-on-surface m-0">${money(p.price)} <span class="text-[10px] font-normal text-on-surface-variant">/ bag</span></p>
+        <a class="bg-primary-container text-on-primary px-3 py-1 rounded text-xs font-medium hover:bg-primary-container/90" href="/farmer/fertilizers?search=${encodeURIComponent(p.name)}">View</a>
+      </div>
+    </div>`).join('') : '<p class="text-xs text-on-surface-variant">No matching supplier product is available.</p>';
+
+}).catch(e => alert(e.message));
+</script>
+{% endblock %}

@@ -177,6 +177,20 @@ class DigitalTwinSession(db.Model):
         }
 
 
+class Farm(db.Model):
+    __tablename__ = 'farms'
+
+    id = db.Column(db.Integer, primary_key=True)
+    farmer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    farm_name = db.Column(db.String(120), nullable=False)
+    crop = db.Column(db.String(64), nullable=False)
+    plan_data = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    farmer = db.relationship('User', backref=db.backref('farms', lazy=True))
+
+
 
 class MandiPrice(db.Model):
     __tablename__ = "mandi_prices"
